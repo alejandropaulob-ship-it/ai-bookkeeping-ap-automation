@@ -1,0 +1,32 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# n8n local/runtime data
+.n8n/
+n8n_data/
+*.sqlite
+*.sqlite3
+
+# Credentials and private configuration
+credentials.json
+credentials*.json
+secrets.json
+secrets*.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
