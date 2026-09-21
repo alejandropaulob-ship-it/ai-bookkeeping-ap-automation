@@ -1,0 +1,1583 @@
+{
+  "name": "AI Bookkeeping & AP Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\n\nconst output = [];\n\nconst supportedMimeTypes = [\n  'application/pdf',\n  'image/jpeg',\n  'image/png',\n  'image/heic',\n  'image/heif'\n];\n\nconst supportedExtensions = [\n  '.pdf',\n  '.jpg',\n  '.jpeg',\n  '.png',\n  '.heic',\n  '.heif'\n];\n\nfor (const key of Object.keys(item.binary || {})) {\n  const attachment = item.binary[key];\n\n  const fileName = String(attachment.fileName || '').toLowerCase();\n  const mimeType = String(attachment.mimeType || '').toLowerCase();\n\n  const extensionSupported = supportedExtensions.some(ext =>\n    fileName.endsWith(ext)\n  );\n\n  const mimeTypeSupported = supportedMimeTypes.includes(mimeType);\n\n  // Accept the attachment if either:\n  // 1. Its MIME type is supported, OR\n  // 2. Its file extension is supported\n  if (mimeTypeSupported || extensionSupported) {\n    output.push({\n      json: {\n        attachment_field: key,\n        file_name: attachment.fileName,\n        mime_type: attachment.mimeType\n      },\n      binary: {\n        data: attachment\n      }\n    });\n  }\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        0
+      ],
+      "id": "1ccda00c-9f43-4d6f-b864-07352811dcb0",
+      "name": "Split Invoice Attachments"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.mime_type }}",
+                    "rightValue": "application/pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "01658caa-fa87-4fb4-883a-95bd7063c624"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5b6bc8b6-baac-4178-9357-b8e8e3a423f0",
+                    "leftValue": "={{ $json.mime_type }}",
+                    "rightValue": "image/jpeg",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "JPG_JPEG"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "4f1b855b-0b2d-459b-b7a0-5327cf5ac20b",
+                    "leftValue": "={{ $json.mime_type }}",
+                    "rightValue": "image/png",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PNG"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a97b0475-ad70-467e-84eb-bc36f103a462",
+                    "leftValue": "={{ $json.mime_type === 'image/heic' || String($json.file_name || '').toLowerCase().endsWith('.heic') }}",
+                    "rightValue": "image/heic",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "HEIC"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d55d654d-e18f-4653-a7cc-6213aa633c9a",
+                    "leftValue": "={{ $json.mime_type === 'image/heif' || String($json.file_name || '').toLowerCase().endsWith('.heif') }}",
+                    "rightValue": "image/heif",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "HEIF"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        336,
+        -32
+      ],
+      "id": "9a82b46d-dafc-4f5d-8ed1-5edd5a7f72a7",
+      "name": "Route by File Type"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        608,
+        0
+      ],
+      "id": "7c10a17f-b390-4f9a-b6cb-13be8953faaf",
+      "name": "Merge Image Files"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const binaryData = $input.item.binary.data;\n\n// Get the actual binary buffer for the current item\nconst buffer = await this.helpers.getBinaryDataBuffer($itemIndex, 'data');\n\nconst mimeType = binaryData.mimeType;\nconst base64 = buffer.toString('base64');\n\nreturn {\n  json: {\n    file_name: binaryData.fileName,\n    mime_type: mimeType,\n    image_data_url: `data:${mimeType};base64,${base64}`\n  },\n  binary: {\n    data: binaryData\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        0
+      ],
+      "id": "48f3e6f0-eba7-4fa3-aa04-626eb9382009",
+      "name": "Prepare Image for AI"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst output = [];\n\nfor (const item of items) {\n  const content = item.json?.choices?.[0]?.message?.content;\n\n  if (!content) {\n    output.push({\n      json: {\n        extraction_valid: false,\n        extraction_status: \"REVIEW_REQUIRED\",\n        extraction_issues: [\"No AI response content found\"],\n        raw_response: item.json\n      },\n      binary: item.binary\n    });\n\n    continue;\n  }\n\n  try {\n    // Remove Markdown code fences if the AI adds them\n    let cleaned = content\n      .replace(/```json/gi, \"\")\n      .replace(/```/g, \"\")\n      .trim();\n\n    // Convert the AI response into JSON\n    const parsed = JSON.parse(cleaned);\n    parsed.extraction_pass = item.json?.retry_count\n     ? \"RETRY\"\n     : \"INITIAL\";\n\n    // Remove TOTAL AMOUNT entries from line_items.\n    // Total amounts belong in amount_breakdown, not line_items.\n    if (Array.isArray(parsed.line_items)) {\n      parsed.line_items = parsed.line_items.filter((line) => {\n        const name = String(line?.item_name || \"\").toUpperCase().trim();\n\n        return !(\n          name === \"TOTAL AMOUNT\" ||\n          name === \"TOTAL AMOUNT DUE\" ||\n          name === \"GRAND TOTAL\" ||\n          name === \"TOTAL\"\n        );\n      });\n    }\n\n    // Preserve the original image information from Prepare Image for AI.\n    const preservedData = {};\n\n    if (item.json?.file_name) {\n      preservedData.file_name = item.json.file_name;\n    }\n\n    if (item.json?.mime_type) {\n      preservedData.mime_type = item.json.mime_type;\n    }\n\n    if (item.json?.image_data_url) {\n      preservedData.image_data_url = item.json.image_data_url;\n    }\n\n    if (item.json?.retry_count !== undefined) {\n       preservedData.retry_count = item.json.retry_count;\n    }\n\n    output.push({\n      json: {\n        ...parsed,\n        ...preservedData\n      },\n      binary: item.binary\n    });\n\n  } catch (error) {\n    output.push({\n      json: {\n        extraction_valid: false,\n        extraction_status: \"REVIEW_REQUIRED\",\n        extraction_issues: [\n          \"AI response could not be parsed as valid JSON\"\n        ],\n        parse_error: error.message,\n        raw_ai_response: content,\n\n        file_name: item.json?.file_name || null,\n        mime_type: item.json?.mime_type || null,\n        image_data_url: item.json?.image_data_url || null\n      },\n      binary: item.binary\n    });\n  }\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1776,
+        -112
+      ],
+      "id": "e428d0ed-42ef-4b27-8583-088e440f16ab",
+      "name": "Parse Image Invoice"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.extraction_valid }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "71444e6b-6ac7-42d4-acee-eec81f590382"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "VALID"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9cf6574d-08e6-41be-a522-5da2f77c0130",
+                    "leftValue": "={{ $json.extraction_valid }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "false",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "REVIEW_REQUIRED"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2656,
+        -112
+      ],
+      "id": "b9649c61-eeb6-4849-a9f5-06d94372cbe1",
+      "name": "Invoice Extraction Status"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1568,
+        -224
+      ],
+      "id": "7eca2289-05ea-49da-9f43-35c3f0159014",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f040830a-8b8e-474e-a6cb-b9b8dab43bd4",
+      "name": " Receive Invoice Email",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HM4hqRPMA6Ui4lHD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        -320
+      ],
+      "id": "3c8af772-67bc-4d1e-96be-ebe8eb4d83bf",
+      "name": "Extract PDF Text"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://heif-converter:8000/convert",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "data",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        864,
+        560
+      ],
+      "id": "ddd0320d-a5fc-4731-be6e-1b2f0a9c4742",
+      "name": "Convert HEIF to JPEG"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map((item, index) => {\n  const binary = item.binary?.data;\n\n  if (!binary) {\n    throw new Error(\"No binary data found in field 'data'.\");\n  }\n\n  // Get the original filename from the HEIF routing node\n  const originalBinary =\n    $('Route by File Type').all()[index]?.binary?.data;\n\n  const originalFileName =\n    originalBinary?.fileName || \"converted-image.heif\";\n\n  // Remove HEIC/HEIF extension and add JPG\n  const convertedFileName =\n    originalFileName.replace(\n      /\\.(heic|heif)$/i,\n      \"\"\n    ) + \".jpg\";\n\n  return {\n    json: {\n      original_file_name: originalFileName,\n      converted_file_name: convertedFileName,\n      converted_mime_type: \"image/jpeg\"\n    },\n\n    binary: {\n      data: {\n        ...binary,\n        fileName: convertedFileName,\n        fileExtension: \"jpg\",\n        mimeType: \"image/jpeg\"\n      }\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        560
+      ],
+      "id": "53c0f687-5eb7-4125-a5ae-ebeb892bc486",
+      "name": "Normalize HEIF JPEG"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://heif-converter:8000/convert",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "data",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        880,
+        256
+      ],
+      "id": "52b81793-d23a-4301-b3f8-1621f10a5ec5",
+      "name": "Convert HEIC to JPEG"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n{\n  model: \"openai/gpt-4.1-nano\",\n  temperature: 0,\n  max_tokens: 800,\n\n  messages: [\n    {\n      role: \"system\",\n      content: \"You are a financial document data extraction assistant. Extract invoice information accurately from the provided invoice image. Return ONLY valid JSON. Do not include markdown, explanations, comments, or code fences.\\n\\nSTRICT SOURCE VISIBILITY AND NO-INVENTION RULES:\\n1. Extract ONLY information that is actually visible and readable in the invoice image.\\n2. Never guess, infer, reconstruct, complete, repair, or manufacture a value that is missing, partially visible, unclear, blurry, distorted, obscured, or ambiguous.\\n3. If a field cannot be reliably determined directly from the invoice image, return null for that field.\\n4. Do not use common patterns, business context, filenames, surrounding text, other fields, or assumptions to fill in missing information.\\n5. DATE COMPLETENESS RULE: A date must contain a complete, readable date value. For numeric dates, the year must be complete and readable. If the invoice shows a partial date such as '5/31/2', '6/14/2', '05/31/20', or any other visibly truncated date, return null for that date field. NEVER return the visible partial date as the field value and NEVER complete the missing digits yourself.\\n6. IDENTIFIER COMPLETENESS RULE: Invoice numbers, reference numbers, transaction numbers, and other identifiers must be extracted only when the complete identifier is clearly visible and readable. If an identifier appears truncated, cut off, obscured, blurry, or incomplete, return null. NEVER return only the visible portion of an incomplete identifier and NEVER reconstruct the missing characters.\\n7. GENERAL PARTIAL-VALUE RULE: If a value is visibly incomplete, truncated, cut off, obscured, blurry, distorted, or otherwise does not contain the complete source value, return null. Do not return the partial value. Do not infer the missing portion from patterns, dates, numbering conventions, surrounding fields, filenames, business context, or mathematical relationships.\\n8. COMPLETE-VALUE REQUIREMENT: Before returning any extracted field, verify that the value being returned represents the complete value visible in the invoice image. If you cannot confidently determine that the returned value is complete, return null.\\n9. ARITHMETIC RESTRICTION: Arithmetic may be used to validate information that is clearly present, but arithmetic must NEVER be used to reconstruct, complete, or infer a missing or unreadable source value.\\n10. The invoice image is the source of truth for extraction. Downstream workflow nodes may perform calculations and validation separately.\\n\\nIMPORTANT VENDOR IDENTIFICATION RULES:\\n1. vendor = the business, company, contractor, seller, or service provider that ISSUED the invoice.\\n2. Look carefully at the invoice header, company name, logo, business information, and issuer information to identify the vendor.\\n3. vendor is NOT the customer, bill-to party, client, property owner, or recipient of the invoice.\\n4. customer_name = the person, company, organization, or entity being billed.\\n5. If the vendor name is clearly visible anywhere on the invoice, extract it. Do not return null merely because the vendor is not explicitly labeled with the word 'Vendor'.\\n6. If the invoice header contains a business name such as a landscaping company, contractor, consulting company, service provider, or other issuer, that business name should be used as vendor.\\n7. Do not confuse the vendor with customer_name. They are separate fields.\\n8. Do not invent a vendor name. Only use a vendor name that can be determined from the invoice image.\\n\\nIMPORTANT FINANCIAL RULES:\\n1. total_amount = the FULL invoice total before subtracting payments already received.\\n2. payment_received = the total amount already paid, if shown on the invoice.\\n3. amount_due = the REMAINING BALANCE after subtracting payment_received from total_amount.\\n4. NEVER set amount_due equal to total_amount when a payment has already been received.\\n5. If the invoice shows a payment received, subtract it from the full invoice total.\\n6. Do not treat a payment date as a payment reference. payment_reference should contain only an actual payment/check/transaction/reference number. If none exists, return null.\\n7. If the invoice contains both a payment/reference number in a payment instructions or payment method section AND a separate reference number in a Payment Received section, use the reference number associated with the actual payment received as payment_reference. The payment-received transaction/reference number takes priority over a payment-instruction reference or invoice number.\\n8. currency must be extracted from the invoice. If the invoice uses $, return USD unless another currency is explicitly identified.\\n9. Do not invent missing values. Use null when a value genuinely cannot be determined.\\n10. Line item totals should equal quantity multiplied by unit_cost when those values are available.\\n11. Preserve the invoice's financial breakdown, including discounts, taxes, fees, surcharges, and payments.\\n12. A displayed TOTAL AMOUNT DUE on an invoice may represent the original/full invoice total rather than the remaining balance. Determine the remaining balance using the payment information shown on the document.\\n13. If a payment is shown separately, do not include that payment as part of the invoice's pre-payment total.\\n14. Do not replace an amount explicitly printed on the invoice with a mathematically calculated amount. Extract the printed amount as shown, then allow downstream validation to determine whether it is mathematically correct.\\n15. Do not correct an invoice's tax, discount, subtotal, total, or amount due during extraction. Extract what is visibly printed on the invoice.\\n16. All monetary and numeric financial fields must be returned as JSON numbers, not strings. Remove currency symbols such as $, commas, and other formatting characters from numeric values while preserving the exact numeric amount printed on the invoice. For example, '$1,980.00' must be returned as 1980, '$293.73' as 293.73, and '-$50.00' as -50. Do not change, round, recalculate, or otherwise alter the printed numeric value. If the complete numeric value cannot be reliably read from the invoice, return null.\\n\\nIMPORTANT AMOUNT-DUE PRIORITY RULES:\\n17. If the invoice contains a separate field, section, table, or label explicitly showing the FINAL REMAINING BALANCE AFTER PAYMENT — such as 'AMOUNT DUE AFTER PAYMENT', 'BALANCE DUE', 'REMAINING BALANCE', 'BALANCE AFTER PAYMENT', 'AMOUNT REMAINING', 'CURRENT BALANCE', or equivalent wording — that printed amount MUST be extracted as amount_due.\\n18. If payment_received is greater than zero AND a separate final remaining-balance amount is visibly printed, amount_due MUST use that exact printed remaining-balance amount. Do not use total_amount, the original invoice total, a subtotal, a tax amount, or the payment amount for amount_due.\\n19. When both a full invoice total and a final remaining balance are visible, keep them strictly separate: total_amount = the full invoice total before payments, while amount_due = the final remaining balance still owed after payments.\\n20. A label containing the words 'TOTAL', 'TOTAL INVOICE AMOUNT', or 'TOTAL AMOUNT DUE' does NOT automatically mean the remaining balance. Determine what the number represents from its surrounding labels, payment summary, and document context. If a distinct final balance-after-payment field is present, use that field for amount_due.\\n21. Do not calculate amount_due from total_amount minus payment_received when a clearly printed final remaining-balance value is available. Extract the printed final balance exactly as shown and let downstream validation determine whether it is mathematically correct.\\n22. When a Payment Summary, Payment History, Account Summary, or similar section shows a payment followed by a separate final Amount Due / Balance Due / Remaining Balance, treat that final balance as the authoritative printed amount_due source.\\n23. If multiple candidate balance amounts appear, choose the amount that is explicitly identified as the final/current amount still owed after the recorded payment. Do not choose an intermediate balance, prior balance, payment amount, original total, or mathematically expected balance.\\n24. If no separate final remaining-balance value is printed, amount_due may be determined from the payment information according to the financial rules above.\\n25. Never use a payment amount, payment date, payment reference, invoice number, subtotal, tax, intermediate total, or other unrelated number as amount_due.\\n26. FINAL AMOUNT-DUE VISUAL VERIFICATION: Before returning amount_due, locate the exact printed final balance field on the invoice image and read the complete numeric value directly from that field. Verify every digit and decimal digit visually. Do not substitute a mathematically expected value.\\n27. AMOUNT-DUE UNCERTAINTY RULE: If the final printed amount_due contains any digit that cannot be confidently distinguished from the invoice image, return null rather than guessing, reconstructing, or correcting the value.\\n\\nIMPORTANT TAX EXTRACTION RULES:\\n24. Extract the tax amount directly from the tax line printed on the invoice. Do not calculate the tax amount yourself.\\n25. If the invoice explicitly prints a tax rate and a tax amount, return the exact printed tax amount even if the amount appears mathematically incorrect. Downstream validation will determine whether the amount reconciles.\\n26. The 'tax' field and the corresponding tax entry in amount_breakdown must use the SAME exact printed tax amount from the invoice.\\n27. Never replace a printed tax amount with a mathematically calculated amount.\\n28. Do not derive, adjust, round, or recalculate tax during extraction. If the printed tax amount is '$1,665.47', return 1665.47. If the printed tax amount is '$1,685.47', return 1685.47. The downstream validator determines which is mathematically correct.\\n29. If multiple tax amounts appear on the invoice, use the amount associated with the invoice's final/current tax line and preserve the corresponding description and rate. Do not combine separate tax amounts unless the invoice explicitly presents them as a combined total tax amount.\\n\\nNEW TAX VISUAL VERIFICATION RULES:\\n30. TAX VISUAL DIGIT VERIFICATION: When extracting a tax amount, read every digit, decimal point, and decimal digit directly from the printed tax line in the invoice image. Do not substitute a mathematically calculated value for what is visibly printed.\\n31. TAX NO-INFERENCE RULE: Do not infer the tax amount from the tax rate, subtotal, discount, taxable amount, total, or any other financial relationship. The printed tax amount itself is the source of truth for extraction.\\n32. TAX UNCERTAINTY RULE: If any digit of the printed tax amount cannot be confidently distinguished from the invoice image, return null for the tax amount rather than choosing a mathematically plausible or visually similar alternative.\\n33. TAX FIELD CONSISTENCY RULE: The 'tax' field and the tax object inside 'amount_breakdown' MUST come from the same exact printed tax line and MUST contain the same numeric amount. Do not independently calculate or generate different tax values for these two fields.\\n34. TAX CHARACTER CONFUSION RULE: Pay particular attention to visually similar digits such as 3, 5, 6, 8, and 9 when reading the printed tax amount. Do not change one digit to another based on what the mathematical calculation would suggest.\\n\\nIMPORTANT TOTAL EXTRACTION RULES:\\n35. total_amount must be the full invoice total printed on the invoice before subtracting any payment received.\\n36. Do not calculate total_amount from subtotal, discount, fees, and tax when a printed total is clearly visible.\\n37. Extract the printed total exactly as shown, even if it does not mathematically reconcile with the other printed values.\\n38. If the invoice contains both a full invoice total and an amount due after payment, total_amount must contain the full invoice total and amount_due must contain the separate remaining balance.\\n\\nFINANCIAL CALCULATION PRIORITY:\\n- First calculate the line-item subtotal.\\n- Apply discounts.\\n- Add applicable fees/surcharges.\\n- Add tax.\\n- This produces the full invoice total.\\n- Then subtract payments already received.\\n- The resulting value is amount_due.\\n\\nIMPORTANT: The calculation priority above is for understanding the invoice's financial structure and payment relationship. It does NOT authorize you to replace a clearly printed invoice value with your own calculation. Printed invoice values must be extracted as printed. Mathematical validation and correction decisions belong to downstream workflow nodes.\\n\\nPRE-RETURN VERIFICATION:\\nBefore returning JSON, perform these checks against the invoice image only:\\n1. Verify invoice_date is complete and readable directly from the invoice image.\\n2. Verify due_date is complete and readable directly from the invoice image.\\n3. Identify the full invoice total separately from any remaining balance.\\n4. If payment_received is greater than zero, locate the final/current remaining-balance field after payment and visually verify its complete printed number before assigning amount_due. Prefer the explicitly printed final balance over any calculated balance whenever it is clearly visible.\\n5. Verify the tax amount directly against the printed tax line, digit by digit.\\n6. Verify that the tax field and tax amount_breakdown entry contain the same exact printed tax amount.\\n7. Do not use arithmetic to alter any extracted printed value.\\n\\nReturn this exact JSON structure:\\n{\\n  \\\"vendor\\\": null,\\n  \\\"invoice_number\\\": null,\\n  \\\"invoice_date\\\": null,\\n  \\\"due_date\\\": null,\\n  \\\"customer_name\\\": null,\\n  \\\"currency\\\": null,\\n  \\\"payment_method\\\": null,\\n  \\\"payment_reference\\\": null,\\n  \\\"total_amount\\\": null,\\n  \\\"amount_due\\\": null,\\n  \\\"payment_received\\\": 0,\\n  \\\"line_items\\\": [],\\n  \\\"amount_breakdown\\\": [],\\n  \\\"document_adjustments\\\": [],\\n  \\\"extraction_pass\\\": \\\"INITIAL\\\",\\n  \\\"file_name\\\": null,\\n  \\\"mime_type\\\": null,\\n  \\\"tax\\\": null\\n}\\n\\nFor line_items use objects with: item_name, quantity, unit_cost, total.\\nFor amount_breakdown use objects with: description, amount, type.\\nFor document_adjustments use objects with: description, amount, type, source, affects_amount_due when applicable.\\n\\nIMPORTANT: Extract the values from the actual image. Do not use example values from these instructions.\"\n    },\n    {\n      role: \"user\",\n      content: [\n        {\n          type: \"text\",\n          text: \"Extract all relevant invoice information from this invoice image. Pay particular attention to the invoice issuer/vendor name, customer name, full invoice total, payments already received, remaining amount due, currency, payment reference, exact invoice date, exact due date, and exact printed tax amount. The vendor is the business or service provider issuing the invoice, while customer_name is the entity being billed. If a separate Payment Received section contains a transaction/reference number, use that as payment_reference instead of an invoice number or payment-instruction reference. If the invoice contains a separate remaining-balance field such as Amount Due After Payment, Balance Due, Remaining Balance, Balance After Payment, or equivalent, use that printed amount as amount_due when payment has been received. Keep the full invoice total in total_amount and the remaining balance in amount_due. Extract printed financial values exactly as they appear on the invoice. Extract the tax amount directly from the printed tax line, digit by digit, and use that same exact printed amount in both tax and the corresponding amount_breakdown entry. Do not calculate, mathematically correct, infer, or substitute the tax amount. If any tax digit is unclear, return null rather than guessing. Do not mathematically correct printed amounts. Do not guess, complete, or reconstruct information that is not clearly visible and complete. Verify dates directly from the image and do not use another date on the invoice to determine or correct a date. Return ONLY the requested JSON.\"\n        },\n        {\n          type: \"image_url\",\n          image_url: {\n            url: $json.image_data_url\n          }\n        }\n      ]\n    }\n  ]\n}\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1168,
+        -32
+      ],
+      "id": "90300216-1fdb-427e-a72c-54e0adfd50c2",
+      "name": "AI  Invoice Extraction",
+      "alwaysOutputData": false,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "MVMp5egZm29XDPqD",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nfunction normalizeText(value) {\n  return String(value ?? \"\")\n    .trim()\n    .toLowerCase()\n    .replace(/\\s+/g, \" \");\n}\n\nfunction normalizeInvoiceNumber(value) {\n  return String(value ?? \"\")\n    .trim()\n    .toLowerCase()\n    .replace(/\\s+/g, \"\")\n    .replace(/–/g, \"-\")\n    .replace(/—/g, \"-\");\n}\n\nfunction normalizeDate(value) {\n  return String(value ?? \"\")\n    .trim()\n    .toLowerCase()\n    .replace(/\\s+/g, \" \");\n}\n\nfunction normalizeAmount(value) {\n  const number = Number(value);\n\n  if (!Number.isFinite(number)) {\n    return \"\";\n  }\n\n  return number.toFixed(2);\n}\n\nreturn items.map(item => {\n  const invoice = item.json;\n\n  const vendor = normalizeText(\n    invoice.vendor\n  );\n\n  const invoiceNumber = normalizeInvoiceNumber(\n    invoice.invoice_number\n  );\n\n  const invoiceDate = normalizeDate(\n    invoice.invoice_date\n  );\n\n  const currency = normalizeText(\n    invoice.currency\n  );\n\n  const totalAmount = normalizeAmount(\n    invoice.total_amount\n  );\n\n  const fingerprintSource = [\n    vendor,\n    invoiceNumber,\n    invoiceDate,\n    currency,\n    totalAmount\n  ].join(\"|\");\n\n  return {\n    json: {\n      ...invoice,\n      invoice_fingerprint: fingerprintSource\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2864,
+        -192
+      ],
+      "id": "79d34a25-4183-4826-bf2a-7eb3e716bf65",
+      "name": "Create Invoice Fingerprint"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "invoices",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "invoice_fingerprint",
+              "condition": "eq",
+              "keyValue": "={{ $json.invoice_fingerprint }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3056,
+        -192
+      ],
+      "id": "29dcdeb6-9fa3-49bf-91c9-09a05eae4e33",
+      "name": "Check Duplicate Invoice",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "HmSsTJASaUJxpSU2",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9bd26c2a-cada-4bc7-a544-95a7f9d6825f",
+              "leftValue": "={{ Object.keys($json).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3248,
+        -192
+      ],
+      "id": "5be9c84c-7970-443b-ada0-15d554e82252",
+      "name": "Duplicate Check"
+    },
+    {
+      "parameters": {
+        "tableId": "invoices",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "invoice_fingerprint",
+              "fieldValue": "={{ $('Create Invoice Fingerprint').item.json.invoice_fingerprint }}"
+            },
+            {
+              "fieldId": "vendor",
+              "fieldValue": "={{ $('Create Invoice Fingerprint').item.json.vendor }}"
+            },
+            {
+              "fieldId": "invoice_number",
+              "fieldValue": "={{ $('Create Invoice Fingerprint').item.json.invoice_number }}"
+            },
+            {
+              "fieldId": "invoice_date",
+              "fieldValue": "={{ $('Create Invoice Fingerprint').item.json.invoice_date }}"
+            },
+            {
+              "fieldId": "customer_name",
+              "fieldValue": "={{ $('Create Invoice Fingerprint').item.json.customer_name }}"
+            },
+            {
+              "fieldId": "currency",
+              "fieldValue": "={{ $('Create Invoice Fingerprint').item.json.currency }}"
+            },
+            {
+              "fieldId": "total_amount",
+              "fieldValue": "={{ $('Create Invoice Fingerprint').item.json.total_amount }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $('Create Invoice Fingerprint').item.json.extraction_status }}"
+            },
+            {
+              "fieldId": "source_file",
+              "fieldValue": "={{ $('Create Invoice Fingerprint').item.json.file_name }}"
+            },
+            {
+              "fieldId": "sender_email",
+              "fieldValue": "={{ $(' Receive Invoice Email').item.json.from.value[0].address }}"
+            },
+            {
+              "fieldId": "processed_at",
+              "fieldValue": "={{ $now }}"
+            },
+            {
+              "fieldId": "tax",
+              "fieldValue": "={{ $('Create Invoice Fingerprint').item.json.tax }}"
+            },
+            {
+              "fieldId": "amount_breakdown",
+              "fieldValue": "={{ $('Create Invoice Fingerprint').item.json.amount_breakdown }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3472,
+        -96
+      ],
+      "id": "f9a278ab-4077-4ca3-8794-d4fdc410f13d",
+      "name": "Save Invoice Record",
+      "credentials": {
+        "supabaseApi": {
+          "id": "HmSsTJASaUJxpSU2",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $(' Receive Invoice Email').item.json.from.value[0].address }}",
+        "subject": "Invoice Received – Successfully Processed",
+        "message": "=<p>Hello,</p>\n\n<p>We received your invoice and successfully processed it through our automated validation system.</p>\n\n<p><strong>Invoice Details</strong></p>\n\n<table style=\"border-collapse:collapse;\">\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>Vendor:</strong></td>\n    <td style=\"padding:6px 0;\">{{ $json.vendor }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>Invoice Number:</strong></td>\n    <td style=\"padding:6px 0;\">{{ $json.invoice_number }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>Invoice Date:</strong></td>\n    <td style=\"padding:6px 0;\">{{ $json.invoice_date }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>Invoice Total:</strong></td>\n    <td style=\"padding:6px 0;\">\n      {{ $json.currency }} {{ Number($json.total_amount ?? 0).toFixed(2) }}\n    </td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>Payment Received:</strong></td>\n    <td style=\"padding:6px 0;\">\n      {{ $('Validate Invoice Data').item.json.currency }}\n      {{ Number($('Validate Invoice Data').item.json.payment_received ?? 0).toFixed(2) }}\n    </td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>Final Total Due:</strong></td>\n    <td style=\"padding:6px 0;\">\n      <strong>\n        {{ $('Validate Invoice Data').item.json.currency }}\n        {{ Number(\n          $('Validate Invoice Data').item.json.final_total_due\n          ?? $('Validate Invoice Data').item.json.amount_due\n          ?? 0\n        ).toFixed(2) }}\n      </strong>\n    </td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>Status:</strong></td>\n    <td style=\"padding:6px 0;\"><strong>VALID</strong></td>\n  </tr>\n</table>\n\n<p>This means the invoice was successfully read and passed our current automated validation checks.</p>\n\n<p>Thank you.</p>",
+        "options": {
+          "appendAttribution": false,
+          "replyToSenderOnly": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3648,
+        -96
+      ],
+      "id": "633e24a5-7a18-4c06-8356-eb139974ee8a",
+      "name": "Send Valid Confirmation",
+      "webhookId": "8abeada8-4419-4c56-872d-9a59f84344f2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HM4hqRPMA6Ui4lHD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $(' Receive Invoice Email').item.json.from.value[0].address }}",
+        "subject": "Invoice Received – Review Required",
+        "message": "=<p>Hello,</p>\n\n<p>We received your invoice, but it requires additional review before it can continue through our processing workflow.</p>\n\n<p><strong>Invoice Details</strong></p>\n\n<table style=\"border-collapse:collapse;\">\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>Vendor:</strong></td>\n    <td style=\"padding:6px 0;\">{{ $json.vendor || 'Not available' }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>Invoice Number:</strong></td>\n    <td style=\"padding:6px 0;\">{{ $json.invoice_number || 'Not available' }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>Invoice Date:</strong></td>\n    <td style=\"padding:6px 0;\">{{ $json.invoice_date || 'Not available' }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>Customer:</strong></td>\n    <td style=\"padding:6px 0;\">{{ $json.customer_name || 'Not available' }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>Printed Amount Due:</strong></td>\n    <td style=\"padding:6px 0;\">\n      <strong>\n        {{ $json.currency || '' }}\n        {{\n          $json.financial_validation?.extracted_amount_due != null\n            ? Number($json.financial_validation.extracted_amount_due).toFixed(2)\n            : 'Not available'\n        }}\n      </strong>\n    </td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>File:</strong></td>\n    <td style=\"padding:6px 0;\">{{ $json.file_name || 'Not available' }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:6px 12px 6px 0;\"><strong>Status:</strong></td>\n    <td style=\"padding:6px 0;\"><strong>REVIEW REQUIRED</strong></td>\n  </tr>\n</table>\n\n<p><strong>Reason for Review</strong></p>\n\n<ul>\n  <li>\n    Calculated amount due:\n    <strong>\n      {{ $json.currency || '' }}\n      {{\n        $json.financial_validation?.calculated_expected_amount_due != null\n          ? Number($json.financial_validation.calculated_expected_amount_due).toFixed(2)\n          : 'Not available'\n      }}\n    </strong>\n  </li>\n\n  <li>\n    Extracted amount due from invoice:\n    <strong>\n      {{ $json.currency || '' }}\n      {{\n        $json.financial_validation?.extracted_amount_due != null\n          ? Number($json.financial_validation.extracted_amount_due).toFixed(2)\n          : 'Not available'\n      }}\n    </strong>\n  </li>\n\n  {{\n    ($json.extraction_issues || [])\n      .map(issue => `<li>${issue}</li>`)\n      .join('')\n  }}\n</ul>\n\n<p>Please review the invoice and provide a corrected document or the missing information if necessary.</p>\n\n<p>No final processing decision has been made yet.</p>\n\n<p>Thank you.</p>",
+        "options": {
+          "appendAttribution": false,
+          "replyToSenderOnly": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2880,
+        -32
+      ],
+      "id": "7f16c804-e534-49bd-8950-ab3c40f1b27b",
+      "name": "Send Review Required Email",
+      "webhookId": "8cb5779d-3365-4efc-9c47-add427a7a0f8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HM4hqRPMA6Ui4lHD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"openai/gpt-4.1-nano\",\n  temperature: 0,\n  max_tokens: 1000,\n  messages: [\n    {\n      role: \"system\",\n      content: \"You are a financial document data extraction assistant. Extract invoice information accurately from the provided PDF text. Return ONLY valid JSON. Do not include markdown, explanations, comments, or code fences.\\n\\nSTRICT SOURCE VISIBILITY AND NO-INVENTION RULES:\\n1. Extract ONLY information that is actually present and readable in the provided PDF text.\\n2. Never guess, infer, reconstruct, complete, repair, or manufacture a value that is missing, partially visible, unclear, or ambiguous.\\n3. If a field cannot be reliably determined directly from the PDF text, return null for that field.\\n4. Do not use common invoice patterns, business context, filenames, surrounding fields, or assumptions to fill in missing information.\\n5. Do not complete a partially visible or incomplete date. If the complete date cannot be reliably determined from the PDF text, return null.\\n6. Do not complete a partially visible invoice number, reference number, amount, tax rate, customer name, vendor name, or any other field.\\n7. If only part of a value is available and the complete value cannot be confidently determined, return null.\\n8. Arithmetic may be used to understand or validate clearly printed values, but arithmetic must NEVER be used to reconstruct a missing or unreadable source value.\\n9. The PDF text is the source of truth for extraction. Downstream workflow nodes perform calculations and validation separately.\\n\\nVENDOR IDENTIFICATION RULES:\\n1. vendor = the business, company, contractor, seller, or service provider that ISSUED the invoice.\\n2. Look for the issuer's business name, company name, header, logo text, address, or other issuer information.\\n3. vendor is NOT the customer, bill-to party, client, property owner, or recipient of the invoice.\\n4. customer_name = the person, company, organization, or entity being billed.\\n5. Do not confuse vendor with customer_name.\\n6. Do not invent a vendor name. Only use a vendor name that is supported by the PDF text.\\n\\nFINANCIAL EXTRACTION RULES:\\n1. total_amount = the full invoice total explicitly printed on the document before subtracting payments already received.\\n2. Extract the printed total exactly as represented by the invoice. Do not replace it with a mathematically calculated total.\\n3. payment_received = the amount explicitly shown as already paid, if any. If no payment is shown, use 0.\\n4. amount_due = the remaining balance only when the remaining balance is explicitly shown or can be directly determined from clearly stated payment information.\\n5. Do not automatically assume amount_due equals total_amount when the document contains payment information that could affect the balance.\\n6. Do not mathematically correct subtotal, discount, subtotal after discount, tax, fee, surcharge, total, or amount_due values that are explicitly printed on the invoice.\\n7. Preserve the invoice's printed financial breakdown exactly as extracted.\\n8. If the invoice contains a printed subtotal, extract that printed subtotal.\\n9. If the invoice contains a printed discount, extract that printed discount.\\n10. If the invoice contains a printed subtotal after discount, extract that printed subtotal after discount.\\n11. If the invoice contains a printed tax amount, extract that printed tax amount.\\n12. If the invoice contains a printed tax rate, extract that printed tax rate.\\n13. If the invoice contains a printed total, extract that printed total.\\n14. If the invoice contains fees or surcharges, preserve them in amount_breakdown.\\n15. Do not use arithmetic to change a printed financial value merely because the numbers do not reconcile.\\n16. Any discrepancy between printed values must be preserved and allowed to be detected by downstream validation.\\n17. currency must be extracted from the PDF text. If the invoice explicitly identifies USD or uses $ where USD is clearly established, return USD. If currency cannot be reliably determined, return null.\\n18. payment_reference must contain an actual payment/check/transaction/reference number when clearly shown. Do not use a payment date as payment_reference.\\n19. If both an invoice number and a separate payment transaction/reference number are shown, use the actual payment transaction/reference number as payment_reference.\\n\\nIMPORTANT DISCOUNT RULES:\\n1. If the PDF explicitly contains a discount line, extract the printed discount amount.\\n2. A discount is a deduction from the subtotal. Preserve the printed discount amount; do not calculate a different discount.\\n3. In amount_breakdown, represent a printed discount as a negative amount because it reduces the invoice subtotal.\\n4. Example: if the PDF says DISCOUNT $135.75, amount_breakdown should contain amount -135.75 and type discount.\\n5. If the PDF does not contain a discount, do not invent one. Use 0 for discount when appropriate and do not create a discount entry that is not present.\\n6. If the PDF explicitly contains SUBTOTAL AFTER DISCOUNT, extract that printed amount exactly. Do not calculate it yourself.\\n\\nIMPORTANT TAX RULES:\\n1. Extract the printed tax amount exactly as shown on the invoice.\\n2. Extract the printed tax rate if one is explicitly shown.\\n3. Do not replace the printed tax amount with a calculated tax amount.\\n4. If the printed tax amount differs slightly from a mathematical percentage calculation, preserve the printed tax amount. Downstream validation will determine whether the difference is acceptable under its rounding rules.\\n\\nLINE ITEM RULES:\\n1. Extract each line item that is actually present in the PDF text.\\n2. For each line item return item_name, quantity, unit_cost, and total.\\n3. Do not calculate or invent a missing line-item value.\\n4. If quantity, unit_cost, or total is not clearly available, use null for that field.\\n5. Do not modify a printed line-item total even if quantity multiplied by unit_cost produces a different result.\\n\\nAMOUNT BREAKDOWN RULES:\\n1. Preserve every clearly printed financial summary line that is relevant to the invoice total.\\n2. Include SUBTOTAL when printed.\\n3. Include DISCOUNT when printed.\\n4. Include SUBTOTAL AFTER DISCOUNT when printed.\\n5. Include SALES TAX or TAX when printed.\\n6. Include FEES, SURCHARGES, or other additional charges when printed.\\n7. Do not create financial breakdown entries that are not present in the PDF text.\\n8. Use the printed amount exactly, except that a discount amount should be represented as negative in amount_breakdown because it is a deduction.\\n9. Use type values such as subtotal, discount, subtotal_after_discount, tax, fee, surcharge, or other_charge as appropriate.\\n\\nIMPORTANT CALCULATION RULE:\\nThe workflow may calculate totals independently downstream. Your job is extraction, not correction. Never replace a clearly printed invoice amount with your own calculation.\\n\\nReturn this exact JSON structure:\\n{\\n  \\\"vendor\\\": null,\\n  \\\"invoice_number\\\": null,\\n  \\\"invoice_date\\\": null,\\n  \\\"due_date\\\": null,\\n  \\\"customer_name\\\": null,\\n  \\\"currency\\\": null,\\n  \\\"subtotal\\\": null,\\n  \\\"discount\\\": 0,\\n  \\\"subtotal_after_discount\\\": null,\\n  \\\"tax_rate\\\": null,\\n  \\\"tax\\\": null,\\n  \\\"total_amount\\\": null,\\n  \\\"amount_due\\\": null,\\n  \\\"payment_received\\\": 0,\\n  \\\"payment_method\\\": null,\\n  \\\"payment_reference\\\": null,\\n  \\\"line_items\\\": [],\\n  \\\"amount_breakdown\\\": []\\n}\\n\\nFor line_items use objects with: item_name, quantity, unit_cost, total.\\nFor amount_breakdown use objects with: description, amount, type.\\n\\nIMPORTANT: Extract values from the actual PDF text only. Do not use example values from these instructions.\"\n    },\n    {\n      role: \"user\",\n      content: \"Extract all relevant invoice information from the following PDF text. Extract the vendor, invoice number, invoice date, due date, customer name, currency, subtotal, discount, subtotal after discount, tax rate, tax amount, printed total amount, payment received if explicitly shown, amount due if explicitly shown or directly determinable from payment information, payment method, payment reference, all visible line items, and the complete visible financial amount breakdown. Pay particular attention to SUBTOTAL, DISCOUNT, SUBTOTAL AFTER DISCOUNT, TAX or SALES TAX, FEES or SURCHARGES, and TOTAL AMOUNT DUE lines. Preserve every printed financial amount exactly as it appears. A printed discount is a deduction and should be represented as a negative amount inside amount_breakdown. Do not mathematically correct or replace printed amounts. Do not guess, infer, or complete information that is not clearly present. If a value is missing or ambiguous, return null. Return ONLY the requested JSON.\\n\\nPDF TEXT:\\n\\n\" + ($json.text || \"\")\n    }\n  ]\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        832,
+        -320
+      ],
+      "id": "d7c88a8c-d7bd-4d89-b2f4-daff8eb50e45",
+      "name": "Extract PDF with AI",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "MVMp5egZm29XDPqD",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c34e7e0e-4d00-4c83-8917-2d11d922e156",
+              "leftValue": "={{\n  ($json.extraction_issues || []).some(\n    issue => issue.includes(\"Multiple financial lines\")\n  )\n  && ($json.retry_count || 0) < 1\n}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2432,
+        -112
+      ],
+      "id": "06e105aa-c9df-4647-8295-5b1c43704b07",
+      "name": "Check Extraction Quality"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst invoice = item.json;\n\nreturn [\n  {\n    json: {\n      ...invoice,\n      retry_count: (invoice.retry_count || 0) + 1,\n      retry_required: true,\n      retry_reason: \"Merged financial lines detected\",\n      retry_instruction:\n        \"Re-read the entire document image carefully. Do not combine separate printed lines. Preserve every visible financial line as its own amount_breakdown entry and its own line_item when applicable. Pay particular attention to document numbers and distinguish the main document number from SOA numbers, reference numbers, and other identifiers. If a value is unclear, return null rather than guessing.\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2560,
+        -384
+      ],
+      "id": "662a9b2d-a87b-48ca-aae6-a891d0407ed5",
+      "name": "Prepare Re-Extraction"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n{\n  model: \"openai/gpt-4.1-nano\",\n  temperature: 0,\n  max_tokens: 1200,\n  messages: [\n    {\n      role: \"system\",\n      content: \"You are a high-accuracy financial document extraction assistant performing a SECOND-PASS VERIFICATION of an invoice, receipt, collection receipt, or billing document image.\\n\\nThis is a retry because the previous extraction may have incorrectly merged multiple printed financial rows. Your job is to visually inspect the ENTIRE document again and produce a corrected structured extraction.\\n\\nIMPORTANT: The second-pass extraction must preserve ALL clearly visible invoice information, not only the information related to the suspected extraction problem.\\n\\nREAD THE ENTIRE IMAGE BEFORE RESPONDING.\\n\\nGENERAL RULES:\\n- Never guess or invent information.\\n- If a value is genuinely unreadable or genuinely absent from the document, return null.\\n- Preserve information exactly as visibly printed whenever possible.\\n- Do not confuse identifiers with financial amounts.\\n- Do not combine separate printed rows.\\n- Do not omit clearly visible financial information.\\n- Do not calculate missing amounts.\\n- Do not create amounts that are not visibly printed.\\n\\nDOCUMENT HEADER:\\n- Carefully inspect the document header first.\\n- Identify the main document number shown next to wording such as Invoice No., Receipt No., Collection Receipt No., Document No., or similar.\\n- Do NOT use an SOA number, policy number, reference number, PRN, transaction number, or other identifier as invoice_number when a main document number is clearly shown.\\n- Identify the document date from the header when clearly shown.\\n- A date is NOT a due date unless the document explicitly labels it as due, payment due, due date, or equivalent.\\n\\nDOCUMENT INFORMATION:\\nExtract exactly:\\n- vendor\\n- invoice_number\\n- invoice_date\\n- due_date\\n- customer_name\\n- currency\\n- payment_method\\n- payment_reference\\n\\nCURRENCY IDENTIFICATION:\\n- If the document explicitly states a currency code or currency name such as USD, PHP, EUR, GBP, CAD, AUD, or similar, use that currency code.\\n- If a currency symbol is clearly shown with monetary amounts, use the symbol as supporting evidence.\\n- Do NOT automatically assume that the \\\"$\\\" symbol means USD because \\\"$\\\" can represent multiple currencies.\\n- If the document contains clear contextual evidence that establishes the currency, use the corresponding three-letter currency code.\\n- If the currency cannot be determined with reasonable confidence, return null.\\n\\nFINANCIAL INFORMATION — CRITICAL SECOND-PASS RULES:\\n\\nYou MUST inspect the ENTIRE IMAGE for financial amounts.\\n\\nFinancial amounts may appear in:\\n- the main financial table\\n- a subtotal section\\n- a tax/fee section\\n- a discount section\\n- a summary section\\n- the bottom of the document\\n- the bottom-right corner\\n- the invoice footer\\n- a payment summary\\n- an amount-due section\\n\\nDo NOT assume that the final total must be located inside the main financial table.\\n\\nTOTAL AMOUNT — CRITICAL:\\n- Specifically search the ENTIRE DOCUMENT for the final invoice total before responding.\\n- Look for labels including:\\n  TOTAL\\n  TOTAL AMOUNT\\n  GRAND TOTAL\\n  AMOUNT DUE\\n  TOTAL DUE\\n  BALANCE DUE\\n  INVOICE TOTAL\\n  NET TOTAL\\n  AMOUNT PAYABLE\\n  or equivalent wording.\\n- If a clearly printed final total amount is visible anywhere on the document, you MUST extract it.\\n- The final total must be represented as an amount_breakdown object with type \\\"total\\\".\\n- Preserve the printed total exactly as a JSON number.\\n- Do NOT calculate the total from subtotal, tax, discount, fees, or other rows.\\n- Do NOT replace a visibly printed total with a calculated value.\\n- Do NOT return null for the total if a clearly readable final total is visibly printed on the image.\\n- Only return no total entry when no final total is genuinely visible or the amount is genuinely unreadable.\\n\\nIMPORTANT:\\nA clearly printed total is valid evidence even when it appears outside the main financial table.\\n\\nFINANCIAL TABLE READING:\\n\\nWhen the document contains a table with labels on the left and amounts on the right, read the table ROW BY ROW.\\n\\nIMPORTANT:\\n- Match each printed label with the amount positioned on the SAME horizontal row.\\n- Treat every visibly separate printed row as a separate amount_breakdown entry.\\n- Do not concatenate labels from multiple rows.\\n- Do not assign an amount from one row to another row.\\n- Do not use reading order alone when labels and amounts are arranged in columns; use their visual row alignment.\\n\\nFor example, if the image visually shows:\\nPREMIUM                 448.00\\nVALUE ADDED TAX          53.76\\nLOCAL GOVT. TAX           2.24\\nDOCUMENTARY STAMPS       56.00\\nOTHERS                    39.00\\nTOTAL                    694.00\\n\\nyou MUST return SIX separate amount_breakdown objects.\\n\\nAMOUNT TYPES:\\nUse only:\\n- product\\n- service\\n- subtotal\\n- tax\\n- fee\\n- charge\\n- discount\\n- total\\n- payment\\n- other\\n\\nCLASSIFICATION RULES:\\n- Only classify a financial line as \\\"tax\\\" when the document explicitly identifies it as a tax or the label clearly contains a tax designation.\\n- Tax designations include terms such as TAX, VAT, VALUE ADDED TAX, SALES TAX, STATE TAX, CITY TAX, COUNTY TAX, LOCAL GOVT. TAX, LOCAL GOVERNMENT TAX, GST, HST, PST, QST, or equivalent wording.\\n- Do NOT classify a line as tax solely because it contains a percentage.\\n- PREMIUM by itself is NOT automatically a tax.\\n- If PREMIUM represents a product or service charge based on the document context, classify it as \\\"product\\\" or \\\"service\\\".\\n- If PREMIUM is explicitly identified as a tax by the document, classify it as \\\"tax\\\".\\n- DOCUMENTARY STAMPS are normally \\\"fee\\\", \\\"charge\\\", or \\\"other\\\", unless the document explicitly identifies them as a tax.\\n- OTHERS should normally be \\\"other\\\" unless the document clearly indicates a different classification.\\n- TOTAL, TOTAL AMOUNT, GRAND TOTAL, AMOUNT DUE, TOTAL DUE, BALANCE DUE, INVOICE TOTAL, NET TOTAL, or AMOUNT PAYABLE should be classified as \\\"total\\\" when they represent the final amount owed on the document.\\n- PAYMENT RECEIVED is \\\"payment\\\".\\n- Do not infer a tax solely from arithmetic, percentage values, or the position of a line.\\n\\nDo not calculate missing amounts.\\nDo not add amounts together.\\nDo not subtract amounts.\\nDo not create a subtotal from other rows.\\nDo not create a tax from arithmetic.\\nDo not create a total from arithmetic.\\n\\nAMOUNT_BREAKDOWN:\\nFor EVERY clearly visible financial row, return one object containing exactly:\\n- label\\n- amount\\n- type\\n\\nPreserve the printed wording of the label as closely as possible.\\nThe amount must be a JSON number.\\n\\nIf a final total is clearly visible, amount_breakdown MUST contain an entry similar to:\\n{\\n  \\\"label\\\": \\\"TOTAL\\\",\\n  \\\"amount\\\": 37.37,\\n  \\\"type\\\": \\\"total\\\"\\n}\\n\\nThe exact label should match the document as closely as possible.\\n\\nLINE_ITEMS:\\nOnly include actual products, services, or clearly identifiable charge lines.\\nDO NOT put document identifiers into line_items.\\nDo not put SOA numbers, reference numbers, PRN numbers, policy numbers, transaction numbers, or other identifiers into line_items.\\nDo not put TOTAL AMOUNT, TOTAL, GRAND TOTAL, AMOUNT DUE, or PAYMENT RECEIVED into line_items.\\n\\nEach line_item must contain exactly:\\n- item_name\\n- quantity\\n- unit_cost\\n- total\\n\\nIf quantity or unit cost is not shown, return null.\\nIf the financial line has a visible amount, preserve that amount in total.\\n\\nIDENTIFIERS:\\nIdentifiers such as SOA numbers, PRN numbers, reference numbers, policy numbers, or transaction numbers must not be treated as line items or financial amounts unless the document explicitly presents them as a monetary charge.\\n\\nJSON RULES:\\nReturn only valid JSON.\\nDo not include Markdown.\\nDo not include code fences.\\nDo not include explanations.\\nDo not include comments.\\nDo not include text before or after the JSON.\\n\\nReturn exactly these fields:\\nvendor, invoice_number, invoice_date, due_date, customer_name, currency, payment_method, payment_reference, amount_breakdown, line_items.\\n\\nFINAL VERIFICATION BEFORE RESPONDING:\\n1. Read the entire document from top to bottom.\\n2. Verify the main document number from the header.\\n3. Verify the document date from the header.\\n4. Search the ENTIRE IMAGE for the final total.\\n5. Check the bottom and summary areas specifically for TOTAL, GRAND TOTAL, TOTAL AMOUNT, AMOUNT DUE, TOTAL DUE, BALANCE DUE, INVOICE TOTAL, NET TOTAL, or AMOUNT PAYABLE.\\n6. If a clearly visible final total exists, make sure it is included in amount_breakdown with type \\\"total\\\".\\n7. Verify the amount paired with the total label is the amount on the SAME visual row.\\n8. Count the visible financial rows.\\n9. Make sure every separate financial row has its own amount_breakdown object.\\n10. Make sure no SOA, PRN, reference, policy, or transaction identifier appears in line_items unless it is actually a financial line.\\n11. Make sure TOTAL AMOUNT and PAYMENT RECEIVED are separate entries.\\n12. Make sure labels and amounts are paired according to their visual row alignment.\\n13. Verify that a line was not classified as tax solely because it contains a percentage.\\n14. Verify that PREMIUM is not classified as tax unless the document explicitly identifies it as a tax.\\n15. Do not calculate or invent a total. Extract the printed total when it is visibly present.\"\n    },\n    {\n      role: \"user\",\n      content: [\n        {\n          type: \"text\",\n          text: \"Perform a complete SECOND-PASS visual extraction of the entire document. This is a retry after a possible line-item/financial-row extraction problem. Re-read the entire image from the header through the bottom of the document. First identify the document information. Then inspect every financial row individually. MOST IMPORTANTLY, search the entire document, including the bottom and summary areas, for the final printed total. If a clearly visible TOTAL, TOTAL AMOUNT, GRAND TOTAL, AMOUNT DUE, TOTAL DUE, BALANCE DUE, INVOICE TOTAL, NET TOTAL, or AMOUNT PAYABLE exists, extract its printed amount as a separate amount_breakdown entry with type \\\"total\\\". Do not calculate it. Do not omit it. Do not combine financial rows. Return only the required JSON.\"\n        },\n        {\n          type: \"image_url\",\n          image_url: {\n            url: $json.image_data_url\n          }\n        }\n      ]\n    }\n  ]\n}\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2768,
+        -384
+      ],
+      "id": "6126bbb9-bbcf-4b26-8def-0877be607639",
+      "name": "AI Re-Extraction",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "MVMp5egZm29XDPqD",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiItem = $input.first();\nconst retrySource = $('Prepare Re-Extraction').item;\n\nreturn [\n  {\n    json: {\n      ...aiItem.json,\n\n      retry_count: retrySource.json.retry_count ?? 0,\n      file_name: retrySource.json.file_name ?? null,\n      mime_type: retrySource.json.mime_type ?? null,\n      image_data_url: retrySource.json.image_data_url ?? null\n    },\n    binary: retrySource.binary ?? aiItem.binary\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2992,
+        -384
+      ],
+      "id": "1bcf4ef5-1f49-4fc1-8b5a-b02c2f1d1440",
+      "name": "Restore Retry Metadata"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst output = [];\n\n// ============================================================\n// HELPER FUNCTIONS\n// ============================================================\n\nfunction num(value) {\n  const n = Number(value);\n  return Number.isFinite(n) ? n : null;\n}\n\nfunction round2(value) {\n  return Number(Number(value).toFixed(2));\n}\n\nfunction text(value) {\n  return String(value ?? \"\").trim();\n}\n\nfunction upper(value) {\n  return text(value).toUpperCase();\n}\n\nfunction entryLabel(entry) {\n  return upper(entry?.label ?? entry?.description ?? \"\");\n}\n\nfunction entryType(entry) {\n  return upper(entry?.type ?? \"\");\n}\n\nfunction isApproximatelyEqual(a, b) {\n  if (a === null || b === null) return false;\n  return Math.abs(a - b) < 0.01;\n}\n\n// ============================================================\n// PROCESS EACH INVOICE\n// ============================================================\n\nfor (const item of items) {\n\n  const invoice = item.json || {};\n  const problems = [];\n\n  // ============================================================\n  // BASIC DOCUMENT VALIDATION\n  // ============================================================\n\n  if (!invoice.vendor) {\n    problems.push(\"Missing vendor\");\n  }\n\n  if (!invoice.invoice_number) {\n    problems.push(\"Missing invoice number\");\n  }\n\n  if (!invoice.invoice_date) {\n    problems.push(\"Missing invoice date\");\n  }\n\n  // ============================================================\n  // CURRENCY NORMALIZATION\n  // ============================================================\n\n  let normalizedCurrency = text(invoice.currency);\n\n  if (!normalizedCurrency) {\n    normalizedCurrency = \"USD\";\n  }\n\n  // ============================================================\n  // LINE ITEMS\n  // ============================================================\n\n  if (\n    !Array.isArray(invoice.line_items) ||\n    invoice.line_items.length === 0\n  ) {\n    problems.push(\"No line items extracted\");\n  }\n\n  // ============================================================\n  // AMOUNT BREAKDOWN\n  // ============================================================\n\n  const breakdown = Array.isArray(invoice.amount_breakdown)\n    ? invoice.amount_breakdown\n    : [];\n\n  // ============================================================\n  // FIND SUBTOTAL\n  // ============================================================\n\n  const subtotalEntries = breakdown.filter(entry => {\n\n    const label = entryLabel(entry);\n    const type = entryType(entry);\n\n    return (\n      type === \"SUBTOTAL\" ||\n      label === \"SUBTOTAL\" ||\n      label === \"NET SALES\" ||\n      label === \"NET SALE\" ||\n      label === \"NET AMOUNT\" ||\n      label === \"VATABLE SALES\" ||\n      label === \"VATABLE SALE\" ||\n      label === \"TAXABLE SALES\" ||\n      label === \"TAXABLE SALE\"\n    );\n  });\n\n  let extractedSubtotal = null;\n\n  if (subtotalEntries.length > 0) {\n\n    const firstSubtotal = subtotalEntries[0];\n    const amount = num(firstSubtotal?.amount);\n\n    if (amount !== null) {\n      extractedSubtotal = amount;\n    }\n  }\n\n  // ============================================================\n  // FIND SUBTOTAL AFTER DISCOUNT\n  // ============================================================\n\n  const subtotalAfterDiscountEntry = breakdown.find(entry => {\n\n    const label = entryLabel(entry);\n\n    return (\n      label.includes(\"SUBTOTAL AFTER DISCOUNT\") ||\n      label.includes(\"SUBTOTAL AFTER DEDUCTION\") ||\n      label.includes(\"NET AFTER DISCOUNT\") ||\n      label.includes(\"NET AFTER DEDUCTION\")\n    );\n  });\n\n  let extractedSubtotalAfterDiscount = null;\n\n  if (subtotalAfterDiscountEntry) {\n\n    const amount = num(subtotalAfterDiscountEntry.amount);\n\n    if (amount !== null) {\n      extractedSubtotalAfterDiscount = amount;\n    }\n  }\n\n  // ============================================================\n  // FIND TOTAL\n  // ============================================================\n\n  const totalEntry = breakdown.find(entry => {\n\n    const label = entryLabel(entry);\n    const type = entryType(entry);\n\n    return (\n      type === \"TOTAL\" ||\n      label === \"TOTAL\" ||\n      label === \"TOTAL AMOUNT\" ||\n      label === \"TOTAL AMOUNT DUE\" ||\n      label === \"GRAND TOTAL\" ||\n      label === \"INVOICE TOTAL\" ||\n      label === \"TOTAL DUE\"\n    );\n  });\n\n  let extractedTotal = null;\n\n  if (totalEntry) {\n\n    const amount = num(totalEntry?.amount);\n\n    if (amount !== null) {\n      extractedTotal = amount;\n    }\n  }\n\n  if (\n    extractedTotal === null &&\n    invoice.total_amount !== null &&\n    invoice.total_amount !== undefined\n  ) {\n    extractedTotal = num(invoice.total_amount);\n  }\n\n  // ============================================================\n  // FIND AMOUNT DUE\n  // ============================================================\n\n  const amountDueEntry = breakdown.find(entry => {\n\n    const label = entryLabel(entry);\n\n    return (\n      label === \"AMOUNT DUE\" ||\n      label === \"BALANCE DUE\" ||\n      label === \"TOTAL DUE\" ||\n      label === \"BALANCE PAYABLE\" ||\n      label === \"AMOUNT PAYABLE\" ||\n      label.includes(\"AMOUNT DUE\") ||\n      label.includes(\"BALANCE DUE\")\n    );\n  });\n\n  let extractedAmountDue = null;\n\n  if (amountDueEntry) {\n\n    const amount = num(amountDueEntry?.amount);\n\n    if (amount !== null) {\n      extractedAmountDue = amount;\n    }\n  }\n\n  if (\n    extractedAmountDue === null &&\n    invoice.amount_due !== null &&\n    invoice.amount_due !== undefined\n  ) {\n    extractedAmountDue = num(invoice.amount_due);\n  }\n\n  // ============================================================\n  // FIND PAYMENT RECEIVED\n  // ============================================================\n\n  const paymentEntries = breakdown.filter(entry => {\n\n    const label = entryLabel(entry);\n    const type = entryType(entry);\n\n    return (\n      type === \"PAYMENT\" ||\n      label === \"PAYMENT RECEIVED\" ||\n      label === \"AMOUNT PAID\" ||\n      label === \"PAID\" ||\n      label.includes(\"PAYMENT RECEIVED\") ||\n      label.includes(\"PAYMENT MADE\") ||\n      label.includes(\"PAYMENTS RECEIVED\")\n    );\n  });\n\n  let extractedPaymentReceived = 0;\n\n  if (paymentEntries.length > 0) {\n\n    extractedPaymentReceived = paymentEntries.reduce(\n      (sum, entry) => {\n\n        const amount = num(entry?.amount);\n\n        if (amount === null) {\n          return sum;\n        }\n\n        return sum + Math.abs(amount);\n      },\n      0\n    );\n  }\n\n  if (\n    paymentEntries.length === 0 &&\n    invoice.payment_received !== null &&\n    invoice.payment_received !== undefined\n  ) {\n\n    const directPayment = num(invoice.payment_received);\n\n    if (directPayment !== null) {\n      extractedPaymentReceived = Math.abs(directPayment);\n    }\n  }\n\n  extractedPaymentReceived = round2(extractedPaymentReceived);\n\n  // ============================================================\n  // CALCULATE LINE ITEM TOTAL\n  // ============================================================\n\n  let calculatedLineItemsTotal = null;\n\n  if (\n    Array.isArray(invoice.line_items) &&\n    invoice.line_items.length > 0\n  ) {\n\n    let validLineItems = true;\n\n    const lineTotal = invoice.line_items.reduce(\n      (sum, line) => {\n\n        const total = num(line?.total);\n\n        if (total === null) {\n          validLineItems = false;\n          return sum;\n        }\n\n        return sum + total;\n      },\n      0\n    );\n\n    if (validLineItems) {\n      calculatedLineItemsTotal = round2(lineTotal);\n    }\n  }\n\n  // ============================================================\n  // DETERMINE CALCULATION BASE\n  // ============================================================\n\n  let calculationBaseSubtotal = null;\n\n  if (calculatedLineItemsTotal !== null) {\n    calculationBaseSubtotal = calculatedLineItemsTotal;\n  } else if (extractedSubtotal !== null) {\n    calculationBaseSubtotal = extractedSubtotal;\n  }\n\n  // ============================================================\n  // LINE ITEMS VS SUBTOTAL\n  // ============================================================\n\n  let lineItemsMatchSubtotal = null;\n\n  if (\n    calculatedLineItemsTotal !== null &&\n    extractedSubtotal !== null\n  ) {\n\n    lineItemsMatchSubtotal =\n      isApproximatelyEqual(\n        calculatedLineItemsTotal,\n        extractedSubtotal\n      );\n\n    if (!lineItemsMatchSubtotal) {\n\n      problems.push(\n        `Calculated line items total ${calculatedLineItemsTotal.toFixed(2)} does not match extracted subtotal ${extractedSubtotal.toFixed(2)}`\n      );\n    }\n  }\n\n  // ============================================================\n  // TAX DETECTION\n  // ============================================================\n\n  const taxEntries = breakdown.filter(entry => {\n\n    const label = entryLabel(entry);\n    const type = entryType(entry);\n\n    return (\n      type === \"TAX\" ||\n      label === \"VAT\" ||\n      label.includes(\"VALUE ADDED TAX\") ||\n      label.includes(\"SALES TAX\") ||\n      label.includes(\"STATE TAX\") ||\n      label.includes(\"CITY TAX\") ||\n      label.includes(\"COUNTY TAX\") ||\n      label.includes(\"LOCAL GOVT\") ||\n      label.includes(\"LOCAL GOVERNMENT\") ||\n      label.includes(\"GST\") ||\n      label.includes(\"HST\") ||\n      label.includes(\"PST\") ||\n      label.includes(\"QST\") ||\n      label.includes(\"TAX (\")\n    );\n  });\n\n  let extractedTax = null;\n\n  if (taxEntries.length > 0) {\n\n    extractedTax = round2(\n      taxEntries.reduce(\n        (sum, entry) => {\n\n          const amount = num(entry?.amount);\n\n          if (amount === null) {\n            return sum;\n          }\n\n          return sum + Math.abs(amount);\n        },\n        0\n      )\n    );\n  }\n\n  if (\n    extractedTax === null &&\n    invoice.tax !== null &&\n    invoice.tax !== undefined\n  ) {\n\n    const directTax = num(invoice.tax);\n\n    if (directTax !== null) {\n      extractedTax = Math.abs(directTax);\n    }\n  }\n\n  // ============================================================\n  // TAX RATE DETECTION\n  // ============================================================\n\n  let extractedTaxRate = null;\n\n  for (const entry of taxEntries) {\n\n    const label = entryLabel(entry);\n\n    const rateMatch =\n      label.match(/(\\d+(?:\\.\\d+)?)\\s*%/);\n\n    if (rateMatch) {\n\n      const rate = num(rateMatch[1]);\n\n      if (\n        rate !== null &&\n        rate >= 0 &&\n        rate <= 100\n      ) {\n        extractedTaxRate = rate;\n        break;\n      }\n    }\n  }\n\n  // ============================================================\n  // DISCOUNT DETECTION\n  // ============================================================\n\n  const discountEntries = breakdown.filter(entry => {\n\n    const label = entryLabel(entry);\n    const type = entryType(entry);\n\n    const isSubtotalAfterDiscount =\n      label.includes(\"SUBTOTAL AFTER DISCOUNT\") ||\n      label.includes(\"SUBTOTAL AFTER DEDUCTION\") ||\n      label.includes(\"NET AFTER DISCOUNT\") ||\n      label.includes(\"NET AFTER DEDUCTION\");\n\n    if (isSubtotalAfterDiscount) {\n      return false;\n    }\n\n    return (\n      type === \"DISCOUNT\" ||\n      label === \"DISCOUNT\" ||\n      label.startsWith(\"DISCOUNT \") ||\n      label.includes(\" REBATE\") ||\n      label.startsWith(\"REBATE\") ||\n      label.includes(\" PROMO\") ||\n      label.startsWith(\"PROMO\") ||\n      label.includes(\"PROMOTIONAL\")\n    );\n  });\n\n  let discountPresent = discountEntries.length > 0;\n  let discountAmount = 0;\n  let discountAmountSource = \"none\";\n\n  // ============================================================\n  // EXTRACT DISCOUNT PERCENTAGE\n  // ============================================================\n\n  let discountRate = null;\n\n  for (const entry of discountEntries) {\n\n    const label = entryLabel(entry);\n\n    const percentMatch = label.match(\n      /(\\d+(?:\\.\\d+)?)\\s*%/\n    );\n\n    if (percentMatch) {\n\n      const parsedRate = Number(percentMatch[1]);\n\n      if (\n        Number.isFinite(parsedRate) &&\n        parsedRate >= 0 &&\n        parsedRate <= 100\n      ) {\n        discountRate = parsedRate;\n        break;\n      }\n    }\n  }\n\n  // ============================================================\n  // DERIVE DISCOUNT FROM AUTHORITATIVE CALCULATION BASE\n  // ============================================================\n\n  let derivedDiscountAmount = null;\n\n  if (\n    discountRate !== null &&\n    calculationBaseSubtotal !== null\n  ) {\n\n    derivedDiscountAmount =\n      round2(\n        calculationBaseSubtotal *\n        (discountRate / 100)\n      );\n  }\n\n  // ============================================================\n  // DERIVE DISCOUNT FROM SUBTOTALS WHEN NO PERCENTAGE EXISTS\n  // ============================================================\n\n  if (\n    derivedDiscountAmount === null &&\n    calculationBaseSubtotal !== null &&\n    extractedSubtotalAfterDiscount !== null\n  ) {\n\n    const difference =\n      calculationBaseSubtotal -\n      extractedSubtotalAfterDiscount;\n\n    if (difference >= 0) {\n\n      derivedDiscountAmount =\n        round2(difference);\n    }\n  }\n\n  // ============================================================\n  // EXPLICIT DISCOUNT AMOUNT\n  // ============================================================\n\n  let explicitDiscountAmount = null;\n\n  if (discountEntries.length > 0) {\n\n    explicitDiscountAmount =\n      round2(\n        discountEntries.reduce(\n          (sum, entry) => {\n\n            const amount = num(entry?.amount);\n\n            if (amount === null) {\n              return sum;\n            }\n\n            return sum + Math.abs(amount);\n          },\n          0\n        )\n      );\n  }\n\n  // ============================================================\n  // DISCOUNT RECONCILIATION\n  // ============================================================\n\n  if (\n    discountRate !== null &&\n    derivedDiscountAmount !== null\n  ) {\n\n    discountAmount =\n      derivedDiscountAmount;\n\n    if (\n      explicitDiscountAmount !== null &&\n      isApproximatelyEqual(\n        explicitDiscountAmount,\n        derivedDiscountAmount\n      )\n    ) {\n\n      discountAmountSource =\n        \"reconciled_percentage_and_explicit\";\n\n    } else {\n\n      discountAmountSource =\n        \"calculated_from_percentage\";\n    }\n\n  } else if (\n    derivedDiscountAmount !== null\n  ) {\n\n    discountAmount =\n      derivedDiscountAmount;\n\n    if (explicitDiscountAmount !== null) {\n\n      discountAmountSource =\n        \"derived_due_to_explicit_discount_mismatch\";\n\n    } else {\n\n      discountAmountSource =\n        \"derived_from_authoritative_subtotal\";\n    }\n\n  } else if (\n    explicitDiscountAmount !== null\n  ) {\n\n    discountAmount =\n      explicitDiscountAmount;\n\n    discountAmountSource =\n      \"explicit_discount_entry\";\n  }\n\n  discountAmount = round2(discountAmount);\n\n  // ============================================================\n  // CALCULATE SUBTOTAL AFTER DISCOUNT\n  // ============================================================\n\n  let calculatedSubtotalAfterDiscount = null;\n\n  if (calculationBaseSubtotal !== null) {\n\n    calculatedSubtotalAfterDiscount =\n      round2(\n        calculationBaseSubtotal -\n        discountAmount\n      );\n  }\n\n  // ============================================================\n  // VALIDATE SUBTOTAL AFTER DISCOUNT\n  // ============================================================\n\n  let subtotalAfterDiscountReconciled = null;\n\n  if (\n    calculatedSubtotalAfterDiscount !== null &&\n    extractedSubtotalAfterDiscount !== null\n  ) {\n\n    subtotalAfterDiscountReconciled =\n      isApproximatelyEqual(\n        calculatedSubtotalAfterDiscount,\n        extractedSubtotalAfterDiscount\n      );\n\n    if (!subtotalAfterDiscountReconciled) {\n\n      problems.push(\n        `Calculated subtotal after discount ${calculatedSubtotalAfterDiscount.toFixed(2)} does not match extracted subtotal after discount ${extractedSubtotalAfterDiscount.toFixed(2)}`\n      );\n    }\n  }\n\n  // ============================================================\n  // ADDITIONAL CHARGES / FEES\n  // ============================================================\n\n  const chargeEntries = breakdown.filter(entry => {\n\n    const type = entryType(entry);\n    const label = entryLabel(entry);\n\n    if (\n      type === \"SUBTOTAL\" ||\n      type === \"TAX\" ||\n      type === \"DISCOUNT\" ||\n      type === \"TOTAL\" ||\n      type === \"PAYMENT\"\n    ) {\n      return false;\n    }\n\n    if (\n      label.includes(\"SUBTOTAL\") ||\n      label.includes(\"DISCOUNT\") ||\n      label.includes(\"REBATE\") ||\n      label.includes(\"PROMO\") ||\n      label === \"TOTAL\" ||\n      label.includes(\"TOTAL AMOUNT\") ||\n      label.includes(\"GRAND TOTAL\") ||\n      label.includes(\"INVOICE TOTAL\") ||\n      label.includes(\"AMOUNT DUE\") ||\n      label.includes(\"BALANCE DUE\") ||\n      label.includes(\"TOTAL DUE\") ||\n      label.includes(\"PAYMENT RECEIVED\") ||\n      label.includes(\"AMOUNT PAID\") ||\n      label === \"PAID\"\n    ) {\n      return false;\n    }\n\n    if (\n      type === \"FEE\" ||\n      type === \"CHARGE\" ||\n      type === \"SURCHARGE\"\n    ) {\n      return true;\n    }\n\n    return (\n      label.includes(\"FEE\") ||\n      label.includes(\"SURCHARGE\") ||\n      label.includes(\"PROCESSING\") ||\n      label.includes(\"HANDLING\") ||\n      label.includes(\"SHIPPING\") ||\n      label.includes(\"ADMINISTRATIVE\") ||\n      label.includes(\"CONVENIENCE\") ||\n      label.includes(\"DISPOSAL\") ||\n      label.includes(\"ENVIRONMENTAL\") ||\n      label.includes(\"SERVICE CHARGE\") ||\n      label.includes(\"OTHER CHARGE\")\n    );\n  });\n\n  let additionalCharges = 0;\n\n  if (chargeEntries.length > 0) {\n\n    additionalCharges = round2(\n      chargeEntries.reduce(\n        (sum, entry) => {\n\n          const amount = num(entry?.amount);\n\n          if (amount === null) {\n            return sum;\n          }\n\n          return sum + Math.abs(amount);\n        },\n        0\n      )\n    );\n  }\n\n  // ============================================================\n  // TAX CALCULATION\n  //\n  // IMPORTANT:\n  //\n  // Tax is calculated AFTER discounts and AFTER applicable\n  // additional charges/fees.\n  //\n  // TAX BASE =\n  // calculated line-item subtotal\n  // - calculated discount\n  // + additional charges\n  //\n  // Partial/full payment is NEVER included in the tax base.\n  // ============================================================\n\n  let calculatedTax = null;\n  let taxReconciled = null;\n  let taxDifference = null;\n  let taxBaseAfterDiscount = null;\n\n  if (\n    calculationBaseSubtotal !== null\n  ) {\n\n    // ==========================================================\n    // TARGETED CHANGE:\n    //\n    // Include additional charges in the taxable base.\n    //\n    // Previous:\n    // subtotal - discount\n    //\n    // New:\n    // subtotal - discount + additionalCharges\n    // ==========================================================\n\n    taxBaseAfterDiscount =\n      round2(\n        calculationBaseSubtotal -\n        discountAmount +\n        additionalCharges\n      );\n\n    // Only independently calculate tax when\n    // the invoice provides an identifiable tax rate.\n\n    if (extractedTaxRate !== null) {\n\n      calculatedTax =\n        round2(\n          taxBaseAfterDiscount *\n          (extractedTaxRate / 100)\n        );\n\n      if (extractedTax !== null) {\n\n        taxDifference =\n          round2(\n            extractedTax -\n            calculatedTax\n          );\n\n        taxReconciled =\n          isApproximatelyEqual(\n            extractedTax,\n            calculatedTax\n          );\n\n        if (!taxReconciled) {\n\n          problems.push(\n            `Calculated tax ${calculatedTax.toFixed(2)} does not match extracted tax ${extractedTax.toFixed(2)} at ${extractedTaxRate}%`\n          );\n        }\n      }\n    }\n  }\n\n  // ============================================================\n  // AUTHORITATIVE TAX FOR TOTAL CALCULATION\n  //\n  // If a tax rate is available, use the independently\n  // calculated tax.\n  //\n  // If no tax rate is available, preserve the previous\n  // extracted-tax behavior so existing valid invoices\n  // without an identifiable rate are not broken.\n  // ============================================================\n\n  let taxForCalculation = 0;\n\n  if (calculatedTax !== null) {\n\n    taxForCalculation = calculatedTax;\n\n  } else if (extractedTax !== null) {\n\n    taxForCalculation = extractedTax;\n  }\n\n  // ============================================================\n  // CALCULATE EXPECTED TOTAL\n  // ============================================================\n\n  let calculatedExpectedTotal = null;\n\n  if (calculationBaseSubtotal !== null) {\n\n    calculatedExpectedTotal =\n      round2(\n        calculationBaseSubtotal -\n        discountAmount +\n        additionalCharges +\n        taxForCalculation\n      );\n  }\n\n  // ============================================================\n  // TOTAL RECONCILIATION\n  // ============================================================\n\n  let totalReconciled = null;\n\n  if (\n    calculatedExpectedTotal !== null &&\n    extractedTotal !== null\n  ) {\n\n    totalReconciled =\n      isApproximatelyEqual(\n        extractedTotal,\n        calculatedExpectedTotal\n      );\n  }\n\n  // ============================================================\n  // PAYMENT / AMOUNT DUE RECONCILIATION\n  // ============================================================\n\n  let calculatedExpectedAmountDue = null;\n  let amountDueReconciled = null;\n  let paymentMathReconciled = null;\n  let amountDueDifference = null;\n\n  if (calculatedExpectedTotal !== null) {\n\n    calculatedExpectedAmountDue =\n      round2(\n        Math.max(\n          calculatedExpectedTotal -\n          extractedPaymentReceived,\n          0\n        )\n      );\n  }\n\n  // ============================================================\n  // IMPORTANT AMOUNT-DUE HANDLING\n  // ============================================================\n\n  let effectiveAmountDue = extractedAmountDue;\n\n  if (calculatedExpectedAmountDue !== null) {\n\n    effectiveAmountDue =\n      calculatedExpectedAmountDue;\n\n    if (extractedAmountDue !== null) {\n\n      amountDueDifference =\n        round2(\n          extractedAmountDue -\n          calculatedExpectedAmountDue\n        );\n\n      amountDueReconciled =\n        isApproximatelyEqual(\n          extractedAmountDue,\n          calculatedExpectedAmountDue\n        );\n\n      const extractedLooksLikeGrossTotal =\n        extractedTotal !== null &&\n        isApproximatelyEqual(\n          extractedAmountDue,\n          extractedTotal\n        );\n\n      if (\n        !amountDueReconciled &&\n        extractedPaymentReceived > 0 &&\n        extractedLooksLikeGrossTotal\n      ) {\n\n        amountDueReconciled = true;\n      }\n    }\n\n    paymentMathReconciled =\n      isApproximatelyEqual(\n        effectiveAmountDue,\n        calculatedExpectedAmountDue\n      );\n\n    // ==========================================================\n    // TARGETED CHANGE:\n    //\n    // Flag a mismatch when the amount printed on the invoice\n    // does not equal the independently calculated balance after\n    // payments.\n    //\n    // IMPORTANT:\n    // - Do NOT overwrite extractedAmountDue.\n    // - Do NOT change effectiveAmountDue.\n    // - Do NOT alter the existing gross-total false-positive\n    //   handling below.\n    // - This only adds the discrepancy to the validation issues.\n    // ==========================================================\n\n    if (\n      amountDueReconciled === false &&\n      extractedAmountDue !== null &&\n      calculatedExpectedAmountDue !== null\n    ) {\n      problems.push(\n        `Calculated amount due ${calculatedExpectedAmountDue.toFixed(2)} does not match extracted amount due ${extractedAmountDue.toFixed(2)}`\n      );\n    }\n  }\n\n  // ============================================================\n  // REMAINING BALANCE\n  // ============================================================\n\n  let remainingBalance = null;\n\n  if (calculatedExpectedTotal !== null) {\n\n    remainingBalance =\n      round2(\n        Math.max(\n          calculatedExpectedTotal -\n          extractedPaymentReceived,\n          0\n        )\n      );\n  }\n\n  // ============================================================\n  // TOTAL VS AMOUNT DUE\n  // ============================================================\n\n  let totalMatchesAmountDue = null;\n\n  if (\n    calculatedExpectedTotal !== null &&\n    effectiveAmountDue !== null\n  ) {\n\n    if (extractedPaymentReceived > 0) {\n\n      totalMatchesAmountDue =\n        isApproximatelyEqual(\n          calculatedExpectedTotal -\n          extractedPaymentReceived,\n          effectiveAmountDue\n        );\n\n    } else {\n\n      totalMatchesAmountDue =\n        isApproximatelyEqual(\n          calculatedExpectedTotal,\n          effectiveAmountDue\n        );\n    }\n  }\n\n  // ============================================================\n  // TAX STATUS\n  // ============================================================\n\n  const taxPresent =\n    extractedTax !== null;\n\n  // ============================================================\n  // SUSPICIOUS LINE ITEM DETECTION\n  // ============================================================\n\n  if (Array.isArray(invoice.line_items)) {\n\n    for (const line of invoice.line_items) {\n\n      const itemName = text(\n        line?.item_name\n      ).toUpperCase();\n\n      const financialKeywords = [\n        \"VAT\",\n        \"VALUE ADDED TAX\",\n        \"LOCAL GOVT\",\n        \"LOCAL GOVERNMENT\",\n        \"DOCUMENTARY\",\n        \"PREMIUM\",\n        \"OTHERS\"\n      ];\n\n      let keywordCount = 0;\n\n      for (const keyword of financialKeywords) {\n\n        if (itemName.includes(keyword)) {\n          keywordCount++;\n        }\n      }\n\n      if (keywordCount >= 2) {\n\n        problems.push(\n          \"Multiple financial lines appear to have been combined into one line item\"\n        );\n\n        break;\n      }\n    }\n  }\n\n  // ============================================================\n  // REMOVE RECOVERABLE AMOUNT-DUE FALSE POSITIVE\n  // ============================================================\n\n  if (\n    calculatedExpectedAmountDue !== null &&\n    extractedAmountDue !== null &&\n    extractedPaymentReceived > 0 &&\n    extractedTotal !== null &&\n    isApproximatelyEqual(\n      extractedAmountDue,\n      extractedTotal\n    ) &&\n    !isApproximatelyEqual(\n      extractedAmountDue,\n      calculatedExpectedAmountDue\n    )\n  ) {\n\n    for (let i = problems.length - 1; i >= 0; i--) {\n\n      if (\n        problems[i].startsWith(\n          \"Calculated amount due \"\n        )\n      ) {\n        problems.splice(i, 1);\n      }\n    }\n  }\n\n  // ============================================================\n  // TOTAL DISCREPANCY HANDLING\n  // ============================================================\n\n  if (\n    calculatedExpectedTotal !== null &&\n    extractedTotal !== null &&\n    !isApproximatelyEqual(\n      calculatedExpectedTotal,\n      extractedTotal\n    ) &&\n    calculatedLineItemsTotal !== null &&\n    discountAmount !== null\n  ) {\n\n    for (let i = problems.length - 1; i >= 0; i--) {\n\n      if (\n        problems[i].startsWith(\n          \"Calculated total \"\n        )\n      ) {\n        problems.splice(i, 1);\n      }\n    }\n  }\n\n  // ============================================================\n  // LINE ITEM / SUBTOTAL DISCREPANCY\n  // ============================================================\n\n  if (\n    calculatedLineItemsTotal !== null &&\n    extractedSubtotal !== null &&\n    !isApproximatelyEqual(\n      calculatedLineItemsTotal,\n      extractedSubtotal\n    )\n  ) {\n\n    for (let i = problems.length - 1; i >= 0; i--) {\n\n      if (\n        problems[i].startsWith(\n          \"Calculated line items total \"\n        )\n      ) {\n        problems.splice(i, 1);\n      }\n    }\n  }\n\n  // ============================================================\n  // FINANCIAL VALIDATION SUMMARY\n  // ============================================================\n\n  const financialValidationIssues =\n    problems.filter(issue =>\n      issue.includes(\"Calculated\") ||\n      issue.includes(\"does not match\") ||\n      issue.includes(\"Missing total\")\n    );\n\n  // ============================================================\n  // FINAL VALIDATION\n  // ============================================================\n\n  const valid =\n    problems.length === 0;\n\n  // ============================================================\n  // OUTPUT\n  // ============================================================\n\n  output.push({\n    json: {\n\n      ...invoice,\n\n      // --------------------------------------------------------\n      // STANDARDIZED VALUES\n      // --------------------------------------------------------\n\n      currency:\n        normalizedCurrency,\n\n      // Full invoice amount BEFORE payments.\n      total_amount:\n        calculatedExpectedTotal !== null\n          ? calculatedExpectedTotal\n          : extractedTotal,\n\n      // Remaining amount AFTER payments.\n      amount_due:\n        effectiveAmountDue,\n\n      // Explicit final-balance field for downstream nodes.\n      final_total_due:\n        effectiveAmountDue,\n\n      payment_received:\n        extractedPaymentReceived,\n\n      // Use calculated tax when tax rate is available.\n      // Otherwise preserve extracted tax.\n      tax:\n        calculatedTax !== null\n          ? calculatedTax\n          : extractedTax,\n\n      // --------------------------------------------------------\n      // FINANCIAL VALIDATION\n      // --------------------------------------------------------\n\n      financial_validation: {\n\n        calculated_product_service_total:\n          calculatedLineItemsTotal,\n\n        calculated_all_line_items_total:\n          calculatedLineItemsTotal,\n\n        extracted_subtotal:\n          extractedSubtotal,\n\n        calculation_base_subtotal:\n          calculationBaseSubtotal,\n\n        calculated_subtotal_after_discount:\n          calculatedSubtotalAfterDiscount,\n\n        extracted_subtotal_after_discount:\n          extractedSubtotalAfterDiscount,\n\n        subtotal_after_discount_reconciled:\n          subtotalAfterDiscountReconciled,\n\n        line_items_match_subtotal:\n          lineItemsMatchSubtotal,\n\n        // ------------------------------------------------------\n        // TAX\n        // ------------------------------------------------------\n\n        tax_present:\n          taxPresent,\n\n        tax_rate_present:\n          extractedTaxRate !== null,\n\n        tax_rate:\n          extractedTaxRate,\n\n        tax_base_after_discount:\n          taxBaseAfterDiscount,\n\n        tax_amount:\n          extractedTax ?? 0,\n\n        calculated_tax:\n          calculatedTax,\n\n        extracted_tax:\n          extractedTax,\n\n        tax_difference:\n          taxDifference,\n\n        tax_reconciled:\n          taxReconciled,\n\n        tax_already_in_line_items:\n          0,\n\n        tax_not_in_line_items:\n          extractedTax ?? 0,\n\n        // ------------------------------------------------------\n        // DISCOUNT\n        // ------------------------------------------------------\n\n        discount_present:\n          discountPresent,\n\n        discount_amount:\n          discountAmount,\n\n        discount_amount_source:\n          discountAmountSource,\n\n        discount_explicit_amount:\n          explicitDiscountAmount,\n\n        discount_derived_amount:\n          derivedDiscountAmount,\n\n        discount_already_in_line_items:\n          0,\n\n        discount_not_in_line_items:\n          discountAmount,\n\n        // ------------------------------------------------------\n        // ADDITIONAL CHARGES\n        // ------------------------------------------------------\n\n        additional_charges:\n          additionalCharges,\n\n        charges_already_represented:\n          0,\n\n        additional_charges_not_in_line_items:\n          additionalCharges,\n\n        // ------------------------------------------------------\n        // CALCULATED TOTAL\n        // ------------------------------------------------------\n\n        calculated_base_total:\n          calculationBaseSubtotal !== null\n            ? round2(\n                calculationBaseSubtotal -\n                discountAmount +\n                taxForCalculation\n              )\n            : null,\n\n        calculated_expected_total:\n          calculatedExpectedTotal,\n\n        effective_total_amount:\n          calculatedExpectedTotal,\n\n        extracted_total:\n          extractedTotal,\n\n        total_reconciled:\n          totalReconciled,\n\n        ai_total_reconciled:\n          totalReconciled,\n\n        // ------------------------------------------------------\n        // AMOUNT DUE\n        // ------------------------------------------------------\n\n        amount_due_present:\n          extractedAmountDue !== null,\n\n        extracted_amount_due:\n          extractedAmountDue,\n\n        calculated_expected_amount_due:\n          calculatedExpectedAmountDue,\n\n        amount_due_reconciled:\n          amountDueReconciled,\n\n        total_matches_amount_due:\n          totalMatchesAmountDue,\n\n        amount_due_difference:\n          amountDueDifference,\n\n        // ------------------------------------------------------\n        // PAYMENT\n        // ------------------------------------------------------\n\n        payment_received:\n          extractedPaymentReceived,\n\n        payment_math_reconciled:\n          paymentMathReconciled,\n\n        remaining_balance:\n          remainingBalance,\n\n        // ------------------------------------------------------\n        // ADJUSTMENTS\n        // ------------------------------------------------------\n\n        adjustment_explains_amount_due_difference:\n          amountDueReconciled === true\n      },\n\n      // --------------------------------------------------------\n      // FINANCIAL VALIDATION ISSUES\n      // --------------------------------------------------------\n\n      financial_validation_issues:\n        financialValidationIssues,\n\n      // --------------------------------------------------------\n      // EXTRACTION STATUS\n      // --------------------------------------------------------\n\n      extraction_valid:\n        valid,\n\n      extraction_status:\n        valid\n          ? \"VALID\"\n          : \"REVIEW_REQUIRED\",\n\n      extraction_issues:\n        problems\n    }\n  });\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        -112
+      ],
+      "id": "26403597-f492-49c0-9092-272db881a99c",
+      "name": "Validate Invoice Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = { ...$json };\n\n// Remove large image payloads from the top level\ndelete data.image_data_url;\ndelete data.image;\ndelete data.image_base64;\ndelete data.base64;\n\n// Remove large image payloads from common nested objects\nconst nestedObjects = [\n  data.input,\n  data.invoice,\n  data.extracted_data,\n  data.extraction,\n  data.document,\n];\n\nfor (const obj of nestedObjects) {\n  if (obj && typeof obj === 'object') {\n    delete obj.image_data_url;\n    delete obj.image;\n    delete obj.image_base64;\n    delete obj.base64;\n  }\n}\n\nreturn {\n  json: data\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        -112
+      ],
+      "id": "93b62ed3-2930-4c26-9394-d13796da28a3",
+      "name": "Clean AI Extraction Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst output = [];\n\nfor (const item of items) {\n  let content = item.json.choices[0].message.content;\n\n  // Preserve file metadata from JSON or binary input\n  let fileName = item.json.file_name || null;\n  let mimeType = item.json.mime_type || \"application/pdf\";\n\n  // Try to get filename/mime type from binary data if not available in JSON\n  if (item.binary) {\n    const binaryKeys = Object.keys(item.binary);\n\n    if (binaryKeys.length > 0) {\n      const binaryData = item.binary[binaryKeys[0]];\n\n      if (!fileName && binaryData.fileName) {\n        fileName = binaryData.fileName;\n      }\n\n      if (binaryData.mimeType) {\n        mimeType = binaryData.mimeType;\n      }\n    }\n  }\n\n  // If the AI already returned an object, use it directly\n  if (typeof content === 'object') {\n  output.push({\n    json: {\n      ...content,\n      file_name: $('Route by File Type').first().json.file_name || null,\n      mime_type: $('Route by File Type').first().json.mime_type || 'application/pdf'\n    }\n  });\n  continue;\n}\n\n  // Remove Markdown code fences if the AI added them\n  content = content\n    .replace(/^```json\\s*/i, '')\n    .replace(/^```\\s*/i, '')\n    .replace(/\\s*```$/i, '')\n    .trim();\n\n  // Fix simple arithmetic expressions returned inside numeric JSON fields.\n  // Example:\n  // \"tax\": 53.76 + 2.24 + 56.00 + 39.00\n  // becomes:\n  // \"tax\": 151\n  content = content.replace(\n    /(\"[^\"]+\"\\s*:\\s*)(\\d+(?:\\.\\d+)?(?:\\s*\\+\\s*\\d+(?:\\.\\d+)?)+)(?=\\s*[,}])/g,\n    (match, prefix, expression) => {\n      const numbers = expression\n        .split('+')\n        .map(value => Number(value.trim()));\n\n      const total = numbers.reduce((sum, value) => sum + value, 0);\n\n      return prefix + total;\n    }\n  );\n\n  const invoice = JSON.parse(content);\n\n  output.push({\n  json: {\n    ...invoice,\n    file_name: $('Route by File Type').first().json.file_name || null,\n    mime_type: $('Route by File Type').first().json.mime_type || 'application/pdf'\n  }\n});\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        -464
+      ],
+      "id": "d2b52ad7-a176-4d3e-b61d-400a1c3d098a",
+      "name": "PDF Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n  const newItem = {\n    json: {\n      ...item.json,\n      original_file_name: item.json.file_name,\n      original_mime_type: item.json.mime_type,\n      original_file_format: \"HEIC\"\n    },\n    binary: {\n      ...item.binary,\n      original_file: item.binary?.data\n    }\n  };\n\n  return newItem;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        256
+      ],
+      "id": "2cccccd2-09b6-429e-9616-4842cfd14c47",
+      "name": "Preserve HEIC/HEIF Metadata"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map((item, index) => {\n  const binary = item.binary?.data;\n\n  if (!binary) {\n    throw new Error(\"No binary data found in field 'data'.\");\n  }\n\n  const originalBinary =\n    $('Route by File Type').all()[index]?.binary?.data;\n\n  const originalFileName =\n    originalBinary?.fileName || \"converted-image.heic\";\n\n  const convertedFileName =\n    originalFileName.replace(\n      /\\.(heic|heif)$/i,\n      \"\"\n    ) + \".jpg\";\n\n  return {\n    json: {\n      original_file_name: originalFileName,\n      converted_file_name: convertedFileName,\n      converted_mime_type: \"image/jpeg\"\n    },\n\n    binary: {\n      data: {\n        ...binary,\n        fileName: convertedFileName,\n        fileExtension: \"jpg\",\n        mimeType: \"image/jpeg\"\n      }\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        256
+      ],
+      "id": "b2b5e143-c03b-42ab-ac42-5dbc716f142f",
+      "name": "Normalize HEIC to JPEG"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n  const newItem = {\n    json: {\n      ...item.json,\n      original_file_name: item.json.file_name,\n      original_mime_type: item.json.mime_type,\n      original_file_format: \"HEIF\"\n    },\n    binary: {\n      ...item.binary,\n      original_file: item.binary?.data\n    }\n  };\n\n  return newItem;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        560
+      ],
+      "id": "6b0ed09b-dadb-444f-a5db-a15108daa131",
+      "name": "Preserve HEIC/HEIF Metadata1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1456,
+        112
+      ],
+      "id": "07cb9352-cbf8-4c74-adcc-9c70619c9be9",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1472,
+        416
+      ],
+      "id": "0a9ea904-2fde-47f4-8546-e528dd29c440",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9bd26c2a-cada-4bc7-a544-95a7f9d6825f",
+              "leftValue": "={{ Object.keys($json).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2912,
+        256
+      ],
+      "id": "bbb0491e-115e-4fb6-a266-0bfc7fbcd5ad",
+      "name": "Duplicate Check1"
+    },
+    {
+      "parameters": {
+        "binaryData": true,
+        "binaryPropertyName": "original_file",
+        "dataPropertyName": "document_fingerprint"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        2416,
+        256
+      ],
+      "id": "51f4dcde-7fe6-4cbb-8c06-b7444a4ee500",
+      "name": "Crypto"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pass the document data and binary files through unchanged.\n// This node serves as the preparation checkpoint before fingerprinting.\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1936,
+        256
+      ],
+      "id": "3b2297f9-bbae-4801-86f4-d837d1cfe64e",
+      "name": "Prepare Document for Fingerprint"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "invoices",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_fingerprint",
+              "condition": "eq",
+              "keyValue": "={{ $json.document_fingerprint }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2656,
+        256
+      ],
+      "id": "8b78e77a-6f2c-4429-b81f-616815c50e6e",
+      "name": "Check Duplicate Document",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "HmSsTJASaUJxpSU2",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "invoices",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "invoice_fingerprint",
+              "fieldValue": "={{ $json.document_fingerprint }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "=manual_review"
+            },
+            {
+              "fieldId": "source_file",
+              "fieldValue": "={{ $json.original_file_name }}"
+            },
+            {
+              "fieldId": "sender_email",
+              "fieldValue": "={{ $(' Receive Invoice Email').item.json.from.value[0].address }}"
+            },
+            {
+              "fieldId": "document_fingerprint",
+              "fieldValue": "={{ $json.document_fingerprint }}"
+            },
+            {
+              "fieldId": "processed_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3696,
+        512
+      ],
+      "id": "ab9dfb21-962b-449a-aa38-50b4fd1887f9",
+      "name": "Save Invoice Record1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "HmSsTJASaUJxpSU2",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3216,
+        512
+      ],
+      "id": "e22dafcf-51b0-442b-b425-c1c84dd491e5",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item;\n\nconst cryptoItem = $('Crypto').item;\n\nreturn {\n  json: {\n    ...item.json,\n    document_fingerprint: cryptoItem.json.document_fingerprint\n  },\n  binary: item.binary\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3440,
+        512
+      ],
+      "id": "6d1319c4-fe32-4e38-a957-73a271fbba9c",
+      "name": "Prepare HEIC/HEIF for Database"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const data = item.json;\n\n  return {\n    json: {\n      ...data,\n      document_fingerprint_source: {\n        file_name: data.original_file_name || data.file_name || \"\",\n        mime_type: data.original_mime_type || data.mime_type || \"\",\n        file_extension: (\n          data.original_file_format ||\n          data.original_file_name ||\n          data.file_name ||\n          \"\"\n        )\n          .toString()\n          .split(\".\")\n          .pop()\n          .toLowerCase()\n      }\n    },\n    binary: item.binary\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        256
+      ],
+      "id": "5cb189d6-32bb-483a-a595-9b1d6a8daecf",
+      "name": "Build Document Fingerprint Source"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $(' Receive Invoice Email').item.json.from.value[0].address }}",
+        "subject": "=⚠️ Duplicate HEIC/HEIF Document Detected — {{ $json.source_file }}",
+        "message": "=<h2>⚠️ Duplicate HEIC/HEIF Document Detected</h2>\n\n<p>The HEIC/HEIF document below was already found in the system and was <strong>not saved as a new document</strong>.</p>\n\n<hr>\n\n<p><strong>Original File:</strong> {{ $json.source_file }}</p>\n<p><strong>Existing Record ID:</strong> {{ $json.id }}</p>\n<p><strong>Current Status:</strong> {{ $json.status }}</p>\n<p><strong>Original Sender:</strong> {{ $json.sender_email }}</p>\n<p><strong>Previously Processed:</strong> {{ $json.processed_at }}</p>\n\n<hr>\n\n<p><strong>Document Fingerprint:</strong> {{ $json.document_fingerprint }}</p>\n\n<p>The existing document record was preserved, and no new record was created.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3168,
+        160
+      ],
+      "id": "e8a41217-f4d1-4e11-96f8-5ebf4d355461",
+      "name": "Send HEIC/HEIF Duplicate Notification",
+      "webhookId": "09b52bae-b723-41ca-8a00-570ad318dfd1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HM4hqRPMA6Ui4lHD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $(' Receive Invoice Email').item.json.from.value[0].address }}",
+        "subject": "=⚠️ Duplicate Invoice Detected — {{ $json.invoice_number }}",
+        "message": "=<h2>⚠️ Duplicate Invoice Detected</h2>  <p>The invoice below was already found in the system and was <strong>not processed as a new invoice</strong>.</p>  <hr>  <p><strong>Vendor:</strong> {{ $json.vendor }}</p> <p><strong>Invoice Number:</strong> {{ $json.invoice_number }}</p> <p><strong>Invoice Date:</strong> {{ $json.invoice_date }}</p> <p><strong>Customer:</strong> {{ $json.customer_name }}</p> <p><strong>Total Amount:</strong> {{ $json.currency }} {{ Number($json.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p> <p><strong>Current Status:</strong> {{ $json.status }}</p> <p><strong>Original File:</strong> {{ $json.source_file }}</p>  <hr>  <p><strong>Existing Record ID:</strong> {{ $json.id }}</p>  <p>The existing invoice record was preserved, and no new invoice record was created.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3472,
+        -288
+      ],
+      "id": "9783616b-182e-4509-bfb1-436508c4df44",
+      "name": "Send Duplicate Notification",
+      "webhookId": "09b52bae-b723-41ca-8a00-570ad318dfd1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HM4hqRPMA6Ui4lHD",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Split Invoice Attachments": {
+      "main": [
+        [
+          {
+            "node": "Route by File Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by File Type": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge Image Files",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge Image Files",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Preserve HEIC/HEIF Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preserve HEIC/HEIF Metadata1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Image Files": {
+      "main": [
+        [
+          {
+            "node": "Prepare Image for AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Image for AI": {
+      "main": [
+        [
+          {
+            "node": "AI  Invoice Extraction",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Parse Image Invoice": {
+      "main": [
+        [
+          {
+            "node": "Clean AI Extraction Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Parse Image Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoice Extraction Status": {
+      "main": [
+        [
+          {
+            "node": "Create Invoice Fingerprint",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Review Required Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    " Receive Invoice Email": {
+      "main": [
+        [
+          {
+            "node": "Split Invoice Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert HEIF to JPEG": {
+      "main": [
+        [
+          {
+            "node": "Normalize HEIF JPEG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize HEIF JPEG": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Convert HEIC to JPEG": {
+      "main": [
+        [
+          {
+            "node": "Normalize HEIC to JPEG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI  Invoice Extraction": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Invoice Fingerprint": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate Invoice": {
+      "main": [
+        [
+          {
+            "node": "Duplicate Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Duplicate Check": {
+      "main": [
+        [
+          {
+            "node": "Send Duplicate Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Invoice Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Invoice Record": {
+      "main": [
+        [
+          {
+            "node": "Send Valid Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Valid Confirmation": {
+      "main": [
+        []
+      ]
+    },
+    "Extract PDF with AI": {
+      "main": [
+        [
+          {
+            "node": "PDF Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Extraction Quality": {
+      "main": [
+        [
+          {
+            "node": "Prepare Re-Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invoice Extraction Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Re-Extraction": {
+      "main": [
+        [
+          {
+            "node": "AI Re-Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Re-Extraction": {
+      "main": [
+        [
+          {
+            "node": "Restore Retry Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Retry Metadata": {
+      "main": [
+        [
+          {
+            "node": "Parse Image Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Invoice Data": {
+      "main": [
+        [
+          {
+            "node": "Check Extraction Quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean AI Extraction Output": {
+      "main": [
+        [
+          {
+            "node": "Validate Invoice Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PDF Code": {
+      "main": [
+        [
+          {
+            "node": "Validate Invoice Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preserve HEIC/HEIF Metadata": {
+      "main": [
+        [
+          {
+            "node": "Convert HEIC to JPEG",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize HEIC to JPEG": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Preserve HEIC/HEIF Metadata1": {
+      "main": [
+        [
+          {
+            "node": "Convert HEIF to JPEG",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Document for Fingerprint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Prepare Document for Fingerprint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Document for Fingerprint": {
+      "main": [
+        [
+          {
+            "node": "Build Document Fingerprint Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate Document": {
+      "main": [
+        [
+          {
+            "node": "Duplicate Check1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Duplicate Check1": {
+      "main": [
+        [
+          {
+            "node": "Send HEIC/HEIF Duplicate Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Prepare HEIC/HEIF for Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare HEIC/HEIF for Database": {
+      "main": [
+        [
+          {
+            "node": "Save Invoice Record1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Document Fingerprint Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "LaCwilBHNPTpfyng",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "68d81068-e2bd-463d-96c9-967a66fd978d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6643a9ea1288790fdb36f55330aa07ec591c626b90df712a1adf03ef627d90b3"
+  },
+  "nodeGroups": [],
+  "id": "ojJSyoyD67TlWVGl",
+  "tags": []
+}

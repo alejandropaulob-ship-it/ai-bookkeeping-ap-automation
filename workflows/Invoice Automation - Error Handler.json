@@ -1,0 +1,67 @@
+{
+  "name": "Invoice Automation - Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3030a20d-be44-43f5-ab0c-2fb59c56b38a",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "alejandropaulob@gmail.com",
+        "subject": "=🚨 Invoice Automation Error — {{ $json.workflow.name }}",
+        "message": "=<h2>🚨 Invoice Automation Error</h2>\n\n<p>An error occurred while processing an invoice.</p>\n\n<hr>\n\n<p><strong>Workflow:</strong> {{ $json.workflow.name }}</p>\n<p><strong>Execution ID:</strong> {{ $json.execution.id }}</p>\n<p><strong>Last Node Executed:</strong> {{ $json.execution.error.lastNodeExecuted }}</p>\n<p><strong>Error Message:</strong> {{ $json.execution.error.message }}</p>\n\n<hr>\n\n<p><strong>Execution URL:</strong><br>\n<a href=\"{{ $json.execution.url }}\">{{ $json.execution.url }}</a>\n</p>\n\n<p>Please review the failed execution in n8n to determine the cause.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "a3f7f264-73e6-4e72-b9ba-bda3a57b10d9",
+      "name": "Send a message",
+      "webhookId": "994b6b7c-72ad-4d64-a34e-a8c8ad3eddd0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HM4hqRPMA6Ui4lHD",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "17270426-6411-427f-9528-9ded3f4181a2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6643a9ea1288790fdb36f55330aa07ec591c626b90df712a1adf03ef627d90b3"
+  },
+  "nodeGroups": [],
+  "id": "LaCwilBHNPTpfyng",
+  "tags": []
+}
