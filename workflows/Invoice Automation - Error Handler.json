@@ -14,7 +14,7 @@
     },
     {
       "parameters": {
-        "sendTo": "alejandropaulob@gmail.com",
+        "sendTo": "YOUR_ALERT_EMAIL@example.com",
         "subject": "=🚨 Invoice Automation Error — {{ $json.workflow.name }}",
         "message": "=<h2>🚨 Invoice Automation Error</h2>\n\n<p>An error occurred while processing an invoice.</p>\n\n<hr>\n\n<p><strong>Workflow:</strong> {{ $json.workflow.name }}</p>\n<p><strong>Execution ID:</strong> {{ $json.execution.id }}</p>\n<p><strong>Last Node Executed:</strong> {{ $json.execution.error.lastNodeExecuted }}</p>\n<p><strong>Error Message:</strong> {{ $json.execution.error.message }}</p>\n\n<hr>\n\n<p><strong>Execution URL:</strong><br>\n<a href=\"{{ $json.execution.url }}\">{{ $json.execution.url }}</a>\n</p>\n\n<p>Please review the failed execution in n8n to determine the cause.</p>",
         "options": {}
